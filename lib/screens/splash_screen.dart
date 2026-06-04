@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'login_screen.dart';
+import 'main_navigation.dart';
 import '../theme/app_theme.dart';
 
 // ecrã de carregamento inicial

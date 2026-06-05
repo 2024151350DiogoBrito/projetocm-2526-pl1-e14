@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/movie.dart';
+import '../screens/movie_detail_screen.dart';
 
 // serviço para ligar à API do TMDB
 class TmdbService {
@@ -30,6 +31,22 @@ class TmdbService {
       'with_release_type': '2|3',
     });
   }
+
+  // vai buscar os detalhes completos de um filme
+  Future<MovieDetail> getMovieDetails(int movieId) async {
+    final uri = Uri.parse('$_baseUrl/movie/$movieId').replace(
+      queryParameters: {'api_key': _apiKey, 'language': 'en-US'},
+    );
+    final response = await http.get(uri);
+    if (response.statusCode == 200) {
+      return MovieDetail.fromJson(json.decode(response.body));
+    }
+    throw Exception('Erro ao carregar detalhes: ${response.statusCode}');
+  }
+
+  // vai buscar filmes semelhantes
+  Future<List<Movie>> getSimilarMovies(int movieId) =>
+      _fetchMovies('movie/$movieId/similar');
 
   // função que faz o pedido à rede e trata os dados
   Future<List<Movie>> _fetchMovies(

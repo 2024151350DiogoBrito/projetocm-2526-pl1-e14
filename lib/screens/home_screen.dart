@@ -3,6 +3,7 @@ import '../theme/app_theme.dart';
 import '../services/tmdb_service.dart';
 import '../models/movie.dart';
 import '../widgets/movie_card.dart';
+import 'movie_detail_screen.dart';
 
 // ecrã principal da aplicação
 class HomeScreen extends StatefulWidget {
@@ -82,18 +83,39 @@ class _HomeScreenState extends State<HomeScreen> {
     ],
   );
 
-  // secção de grande destaque no topo
-  Widget _buildHero() => Stack(
-    children: [
-      Image.network(
-        'https://image.tmdb.org/t/p/original/8Tfys3mDZVp4tNoH2ktm06a0Tau.jpg',
-        height: 550,
-        width: double.infinity,
-        fit: BoxFit.cover,
-      ),
-      _buildHeroGradient(),
-      Positioned(bottom: 40, left: 20, right: 20, child: _buildHeroContent()),
-    ],
+  // secção de grande destaque no topo — usa o 1º filme de trending dinamicamente
+  Widget _buildHero() => FutureBuilder<List<Movie>>(
+    future: _trending,
+    builder: (context, snapshot) {
+      // enquanto carrega mostra um placeholder escuro
+      if (!snapshot.hasData || snapshot.data!.isEmpty) {
+        return Container(
+          height: 550,
+          color: const Color(0xFF0F1014),
+          child: const Center(
+            child: CircularProgressIndicator(color: AppTheme.primaryRed),
+          ),
+        );
+      }
+      final hero = snapshot.data!.first;
+      return Stack(
+        children: [
+          Image.network(
+            hero.fullBackdropPath,
+            height: 550,
+            width: double.infinity,
+            fit: BoxFit.cover,
+          ),
+          _buildHeroGradient(),
+          Positioned(
+            bottom: 40,
+            left: 20,
+            right: 20,
+            child: _buildHeroContent(hero),
+          ),
+        ],
+      );
+    },
   );
 
   // sombreamento para leitura do texto
@@ -114,26 +136,26 @@ class _HomeScreenState extends State<HomeScreen> {
     ),
   );
 
-  // conteúdo e botões do destaque
-  Widget _buildHeroContent() => Column(
+  // conteúdo e botões do destaque — dinâmico com dados reais do filme
+  Widget _buildHeroContent(Movie hero) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
       Row(
         children: [
-          _badge("CRITICS CHOICE"),
+          _badge("TRENDING #1"),
           const SizedBox(width: 10),
           const Icon(Icons.star_rounded, color: AppTheme.primaryRed, size: 16),
           const SizedBox(width: 4),
-          const Text(
-            "8.2",
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900),
+          Text(
+            hero.voteAverage.toStringAsFixed(1),
+            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900),
           ),
         ],
       ),
       const SizedBox(height: 12),
-      const Text(
-        "PROJECT HAIL\nMARY",
-        style: TextStyle(
+      Text(
+        hero.title.toUpperCase(),
+        style: const TextStyle(
           fontSize: 38,
           fontWeight: FontWeight.w900,
           fontStyle: FontStyle.italic,
@@ -145,7 +167,7 @@ class _HomeScreenState extends State<HomeScreen> {
       const SizedBox(height: 30),
       Row(
         children: [
-          Expanded(child: _actionBtn("VIEW DETAILS")),
+          Expanded(child: _actionBtn("VIEW DETAILS", onTap: () => _openDetail(context, hero))),
           const SizedBox(width: 15),
           _favBtn(),
         ],
@@ -262,15 +284,23 @@ class _HomeScreenState extends State<HomeScreen> {
           padding: const EdgeInsets.only(left: 20),
           itemCount: snapshot.data!.length,
           itemBuilder: (context, i) => layout == 'poster'
-              ? MovieCard(movie: snapshot.data![i], onTap: () {})
+              ? MovieCard(movie: snapshot.data![i], onTap: () => _openDetail(context, snapshot.data![i]))
               : _backdropItem(snapshot.data![i]),
         );
       },
     ),
   );
 
+  // abre a página de detalhes do filme
+  void _openDetail(BuildContext ctx, Movie movie) => Navigator.push(
+    ctx,
+    MaterialPageRoute(builder: (_) => MovieDetailScreen(movie: movie)),
+  );
+
   // componente para item horizontal largo
-  Widget _backdropItem(Movie m) => Container(
+  Widget _backdropItem(Movie m) => GestureDetector(
+    onTap: () => _openDetail(context, m),
+    child: Container(
     width: 240,
     margin: const EdgeInsets.only(right: 15),
     decoration: BoxDecoration(
@@ -302,7 +332,8 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
     ),
-  );
+  ),
+);
 
   // widgets de apoio para botões e etiquetas
   Widget _badge(String txt) => Container(
@@ -320,10 +351,10 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     ),
   );
-  Widget _actionBtn(String txt) => SizedBox(
+  Widget _actionBtn(String txt, {VoidCallback? onTap}) => SizedBox(
     height: 56,
     child: ElevatedButton.icon(
-      onPressed: () {},
+      onPressed: onTap,
       icon: const Icon(Icons.info_outline_rounded, color: Colors.black),
       label: Text(txt),
       style: ElevatedButton.styleFrom(

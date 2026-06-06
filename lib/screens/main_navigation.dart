@@ -114,11 +114,16 @@ class _MainNavigationState extends State<MainNavigation> {
   @override
   Widget build(BuildContext context) {
     final List<Widget> screens = [
-      const HomeScreen(),
+      HomeScreen(
+        favoriteMovies: _favoriteMovies,
+        onAddFavorite: _addFavorite,
+        onRemoveFavorite: _removeFavorite,
+      ),
       SearchScreen(
         favoriteMovies: _favoriteMovies,
         recentSearches: _recentSearches,
         onAddFavorite: _addFavorite,
+        onRemoveFavorite: _removeFavorite,
         onAddRecentSearch: _addRecentSearch,
         onClearRecentSearches: _clearRecentSearches,
       ),

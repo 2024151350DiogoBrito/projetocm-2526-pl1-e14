@@ -6,7 +6,16 @@ import '../widgets/movie_card.dart';
 import 'movie_detail_screen.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  final List<Movie> favoriteMovies;
+  final Future<void> Function(Movie) onAddFavorite;
+  final Future<void> Function(Movie) onRemoveFavorite;
+
+  const HomeScreen({
+    super.key,
+    required this.favoriteMovies,
+    required this.onAddFavorite,
+    required this.onRemoveFavorite,
+  });
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -51,6 +60,22 @@ class _HomeScreenState extends State<HomeScreen> {
         _genreMovies = _service.getMoviesByGenre(category.id!);
       }
     });
+  }
+
+  bool _isFavorite(Movie movie) {
+    return widget.favoriteMovies.any((m) => m.id == movie.id);
+  }
+
+  Future<void> _toggleFavorite(Movie movie) async {
+    if (_isFavorite(movie)) {
+      await widget.onRemoveFavorite(movie);
+    } else {
+      await widget.onAddFavorite(movie);
+    }
+
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   @override
@@ -200,7 +225,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
           const SizedBox(width: 15),
-          _favBtn(),
+          _favBtn(hero),
         ],
       ),
     ],
@@ -338,7 +363,14 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _openDetail(BuildContext ctx, Movie movie) => Navigator.push(
     ctx,
-    MaterialPageRoute(builder: (_) => MovieDetailScreen(movie: movie)),
+    MaterialPageRoute(
+      builder: (_) => MovieDetailScreen(
+        movie: movie,
+        isFavorite: _isFavorite(movie),
+        onAddFavorite: widget.onAddFavorite,
+        onRemoveFavorite: widget.onRemoveFavorite,
+      ),
+    ),
   );
 
   Widget _backdropItem(Movie movie) => GestureDetector(
@@ -409,15 +441,23 @@ class _HomeScreenState extends State<HomeScreen> {
     ),
   );
 
-  Widget _favBtn() => Container(
-    height: 56,
-    width: 56,
-    decoration: BoxDecoration(
-      color: const Color(0xFF1C1E26).withValues(alpha: 0.8),
-      borderRadius: BorderRadius.circular(16),
-      border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+  Widget _favBtn(Movie movie) => GestureDetector(
+    onTap: () => _toggleFavorite(movie),
+    child: Container(
+      height: 56,
+      width: 56,
+      decoration: BoxDecoration(
+        color: const Color(0xFF1C1E26).withValues(alpha: 0.8),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+      ),
+      child: Icon(
+        _isFavorite(movie)
+            ? Icons.favorite_rounded
+            : Icons.favorite_border_rounded,
+        color: _isFavorite(movie) ? AppTheme.primaryRed : Colors.white,
+      ),
     ),
-    child: const Icon(Icons.favorite_border_rounded, color: Colors.white),
   );
 }
 

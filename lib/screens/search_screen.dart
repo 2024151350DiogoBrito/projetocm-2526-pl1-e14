@@ -8,6 +8,7 @@ class SearchScreen extends StatefulWidget {
   final List<Movie> favoriteMovies;
   final List<String> recentSearches;
   final Function(Movie) onAddFavorite;
+  final Future<void> Function(Movie) onRemoveFavorite;
   final Function(String) onAddRecentSearch;
   final VoidCallback onClearRecentSearches;
 
@@ -16,6 +17,7 @@ class SearchScreen extends StatefulWidget {
     required this.favoriteMovies,
     required this.recentSearches,
     required this.onAddFavorite,
+    required this.onRemoveFavorite,
     required this.onAddRecentSearch,
     required this.onClearRecentSearches,
   });
@@ -168,8 +170,13 @@ class _SearchScreenState extends State<SearchScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) =>
-            GenreMoviesScreen(genreId: genre.id, genreName: genre.name),
+        builder: (_) => GenreMoviesScreen(
+          genreId: genre.id,
+          genreName: genre.name,
+          favoriteMovies: widget.favoriteMovies,
+          onAddFavorite: widget.onAddFavorite,
+          onRemoveFavorite: widget.onRemoveFavorite,
+        ),
       ),
     );
   }

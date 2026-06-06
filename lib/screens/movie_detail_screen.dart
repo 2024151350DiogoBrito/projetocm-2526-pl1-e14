@@ -7,8 +7,17 @@ import '../services/tmdb_service.dart';
 // ecrã de detalhes de um filme
 class MovieDetailScreen extends StatefulWidget {
   final Movie movie;
+  final bool isFavorite;
+  final Future<void> Function(Movie)? onAddFavorite;
+  final Future<void> Function(Movie)? onRemoveFavorite;
 
-  const MovieDetailScreen({super.key, required this.movie});
+  const MovieDetailScreen({
+    super.key,
+    required this.movie,
+    this.isFavorite = false,
+    this.onAddFavorite,
+    this.onRemoveFavorite,
+  });
 
   @override
   State<MovieDetailScreen> createState() => _MovieDetailScreenState();
@@ -25,6 +34,31 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
     super.initState();
     _detailFuture = _service.getMovieDetails(widget.movie.id);
     _similarFuture = _service.getSimilarMovies(widget.movie.id);
+    _isFavorite = widget.isFavorite;
+  }
+
+  Future<void> _toggleFavorite() async {
+    final nextValue = !_isFavorite;
+
+    setState(() => _isFavorite = nextValue);
+
+    try {
+      if (nextValue) {
+        await widget.onAddFavorite?.call(widget.movie);
+      } else {
+        await widget.onRemoveFavorite?.call(widget.movie);
+      }
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _isFavorite = !nextValue);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Não foi possível atualizar os favoritos.'),
+          backgroundColor: AppTheme.primaryRed,
+        ),
+      );
+    }
   }
 
   @override
@@ -83,7 +117,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
         padding: const EdgeInsets.all(8),
         child: _circleBtn(
           _isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-          () => setState(() => _isFavorite = !_isFavorite),
+          _toggleFavorite,
           iconColor: _isFavorite ? AppTheme.primaryRed : Colors.white,
         ),
       ),
@@ -416,7 +450,11 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                     onTap: () => Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => MovieDetailScreen(movie: m),
+                        builder: (_) => MovieDetailScreen(
+                          movie: m,
+                          onAddFavorite: widget.onAddFavorite,
+                          onRemoveFavorite: widget.onRemoveFavorite,
+                        ),
                       ),
                     ),
                     child: Container(

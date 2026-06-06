@@ -7,11 +7,17 @@ import 'movie_detail_screen.dart';
 class GenreMoviesScreen extends StatefulWidget {
   final int genreId;
   final String genreName;
+  final List<Movie> favoriteMovies;
+  final Function(Movie) onAddFavorite;
+  final Future<void> Function(Movie) onRemoveFavorite;
 
   const GenreMoviesScreen({
     super.key,
     required this.genreId,
     required this.genreName,
+    required this.favoriteMovies,
+    required this.onAddFavorite,
+    required this.onRemoveFavorite,
   });
 
   @override
@@ -80,8 +86,12 @@ class _GenreMoviesScreenState extends State<GenreMoviesScreen> {
                     crossAxisSpacing: 15,
                     mainAxisSpacing: 25,
                   ),
-                  itemBuilder: (context, index) =>
-                      _GenreMovieCard(movie: movies[index]),
+                  itemBuilder: (context, index) => _GenreMovieCard(
+                    movie: movies[index],
+                    isFavorite: _isFavorite(movies[index]),
+                    onAddFavorite: widget.onAddFavorite,
+                    onRemoveFavorite: widget.onRemoveFavorite,
+                  ),
                 );
               },
             ),
@@ -121,18 +131,37 @@ class _GenreMoviesScreenState extends State<GenreMoviesScreen> {
       ),
     ],
   );
+
+  bool _isFavorite(Movie movie) {
+    return widget.favoriteMovies.any((m) => m.id == movie.id);
+  }
 }
 
 class _GenreMovieCard extends StatelessWidget {
   final Movie movie;
+  final bool isFavorite;
+  final Function(Movie) onAddFavorite;
+  final Future<void> Function(Movie) onRemoveFavorite;
 
-  const _GenreMovieCard({required this.movie});
+  const _GenreMovieCard({
+    required this.movie,
+    required this.isFavorite,
+    required this.onAddFavorite,
+    required this.onRemoveFavorite,
+  });
 
   @override
   Widget build(BuildContext context) => GestureDetector(
     onTap: () => Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => MovieDetailScreen(movie: movie)),
+      MaterialPageRoute(
+        builder: (_) => MovieDetailScreen(
+          movie: movie,
+          isFavorite: isFavorite,
+          onAddFavorite: (movie) async => onAddFavorite(movie),
+          onRemoveFavorite: onRemoveFavorite,
+        ),
+      ),
     ),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,

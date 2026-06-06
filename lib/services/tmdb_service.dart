@@ -20,11 +20,15 @@ class TmdbService {
       ? Future.value([])
       : _fetchMovies('search/movie', {'query': query});
 
-  // vai buscar filmes de um gÃ©nero especÃ­fico
-  Future<List<Movie>> getMoviesByGenre(int genreId) => _fetchMovies(
-    'discover/movie',
-    {'with_genres': genreId.toString(), 'sort_by': 'popularity.desc'},
-  );
+  // vai buscar os filmes mais populares de um género específico sem conteúdo +18
+  Future<List<Movie>> getMoviesByGenre(int genreId) =>
+      _fetchMovies('discover/movie', {
+        'with_genres': genreId.toString(),
+        'sort_by': 'popularity.desc',
+        'vote_count.gte': '300',
+        'certification_country': 'US',
+        'certification.lte': 'PG-13',
+      });
 
   // vai buscar as próximas estreias com filtros
   Future<List<Movie>> getUpcomingMovies() {
@@ -35,6 +39,8 @@ class TmdbService {
       'primary_release_date.gte': today,
       'primary_release_date.lte': '2026-12-31',
       'with_release_type': '2|3',
+      'certification_country': 'US',
+      'certification.lte': 'PG-13',
     });
   }
 
@@ -61,7 +67,12 @@ class TmdbService {
   ]) async {
     // monta o link com a chave e parâmetros
     final uri = Uri.parse('$_baseUrl/$endpoint').replace(
-      queryParameters: {'api_key': _apiKey, 'language': 'en-US', ...?params},
+      queryParameters: {
+        'api_key': _apiKey,
+        'language': 'en-US',
+        'include_adult': 'false',
+        ...?params,
+      },
     );
 
     // faz o pedido get
@@ -71,14 +82,35 @@ class TmdbService {
     if (response.statusCode == 200) {
       final List results = json.decode(response.body)['results'];
 
-      // filtra filmes sem imagem e converte para a lista
+      // filtra filmes sem imagem, conteúdo adulto e títulos claramente +18
       return results
-          .where((m) => m['poster_path'] != null && m['backdrop_path'] != null)
+          .where(
+            (m) =>
+                m['poster_path'] != null &&
+                m['backdrop_path'] != null &&
+                m['adult'] != true &&
+                _looksSafeTitle(m['title'] ?? m['name'] ?? ''),
+          )
           .map((m) => Movie.fromJson(m))
           .toList();
     }
 
     // erro se a api falhar
     throw Exception('Erro na API: ${response.statusCode}');
+  }
+
+  bool _looksSafeTitle(String title) {
+    final text = title.toLowerCase();
+    const blockedWords = [
+      'porn',
+      'pornhub',
+      'sex',
+      'erotic',
+      'nude',
+      'naked',
+      'xxx',
+    ];
+
+    return !blockedWords.any(text.contains);
   }
 }

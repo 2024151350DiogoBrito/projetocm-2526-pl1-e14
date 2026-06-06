@@ -20,6 +20,12 @@ class TmdbService {
       ? Future.value([])
       : _fetchMovies('search/movie', {'query': query});
 
+  // vai buscar filmes de um gÃ©nero especÃ­fico
+  Future<List<Movie>> getMoviesByGenre(int genreId) => _fetchMovies(
+    'discover/movie',
+    {'with_genres': genreId.toString(), 'sort_by': 'popularity.desc'},
+  );
+
   // vai buscar as próximas estreias com filtros
   Future<List<Movie>> getUpcomingMovies() {
     final today = DateTime.now().toString().split(' ').first;
@@ -34,9 +40,9 @@ class TmdbService {
 
   // vai buscar os detalhes completos de um filme
   Future<MovieDetail> getMovieDetails(int movieId) async {
-    final uri = Uri.parse('$_baseUrl/movie/$movieId').replace(
-      queryParameters: {'api_key': _apiKey, 'language': 'en-US'},
-    );
+    final uri = Uri.parse(
+      '$_baseUrl/movie/$movieId',
+    ).replace(queryParameters: {'api_key': _apiKey, 'language': 'en-US'});
     final response = await http.get(uri);
     if (response.statusCode == 200) {
       return MovieDetail.fromJson(json.decode(response.body));

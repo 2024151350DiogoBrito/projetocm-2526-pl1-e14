@@ -5,29 +5,54 @@ import '../models/movie.dart';
 import '../widgets/movie_card.dart';
 import 'movie_detail_screen.dart';
 
-// ecrã principal da aplicação
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  // instacia o serviço e prepara as listas
-  final _service = TmdbService();
-  String _selectedCategory = "ALL";
-  late Future<List<Movie>> _trending, _popular, _upcoming;
+  final TmdbService _service = TmdbService();
+  final List<_HomeCategory> _categories = const [
+    _HomeCategory("ALL", null, "✨"),
+    _HomeCategory("ACTION", 28, "💥"),
+    _HomeCategory("ADVENTURE", 12, "🧭"),
+    _HomeCategory("ANIMATION", 16, "🎨"),
+    _HomeCategory("COMEDY", 35, "😂"),
+    _HomeCategory("CRIME", 80, "🕵️"),
+    _HomeCategory("DOCUMENTARY", 99, "🌍"),
+    _HomeCategory("DRAMA", 18, "🎭"),
+    _HomeCategory("FAMILY", 10751, "👪"),
+  ];
 
-  // executa as funções ao abrir o ecrã
+  String _selectedCategory = "ALL";
+  late Future<List<Movie>> _trending;
+  late Future<List<Movie>> _popular;
+  late Future<List<Movie>> _upcoming;
+  late Future<List<Movie>> _genreMovies;
+
   @override
   void initState() {
     super.initState();
     _trending = _service.getTrendingMovies();
     _popular = _service.getPopularMovies();
     _upcoming = _service.getUpcomingMovies();
+    _genreMovies = Future.value([]);
   }
 
-  // constrói a estrutura com scroll infinito
+  Future<List<Movie>> get _heroMovies =>
+      _selectedCategory == "ALL" ? _trending : _genreMovies;
+
+  void _selectCategory(_HomeCategory category) {
+    setState(() {
+      _selectedCategory = category.name;
+      if (category.id != null) {
+        _genreMovies = _service.getMoviesByGenre(category.id!);
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) => Scaffold(
     backgroundColor: AppTheme.deepBlack,
@@ -42,7 +67,6 @@ class _HomeScreenState extends State<HomeScreen> {
     ),
   );
 
-  // barra superior flutuante com logo
   Widget _buildAppBar() => SliverAppBar(
     backgroundColor: AppTheme.deepBlack.withValues(alpha: 0.9),
     floating: true,
@@ -83,11 +107,9 @@ class _HomeScreenState extends State<HomeScreen> {
     ],
   );
 
-  // secção de grande destaque no topo — usa o 1º filme de trending dinamicamente
   Widget _buildHero() => FutureBuilder<List<Movie>>(
-    future: _trending,
+    future: _heroMovies,
     builder: (context, snapshot) {
-      // enquanto carrega mostra um placeholder escuro
       if (!snapshot.hasData || snapshot.data!.isEmpty) {
         return Container(
           height: 550,
@@ -97,6 +119,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         );
       }
+
       final hero = snapshot.data!.first;
       return Stack(
         children: [
@@ -118,7 +141,6 @@ class _HomeScreenState extends State<HomeScreen> {
     },
   );
 
-  // sombreamento para leitura do texto
   Widget _buildHeroGradient() => Positioned.fill(
     child: Container(
       decoration: BoxDecoration(
@@ -136,19 +158,23 @@ class _HomeScreenState extends State<HomeScreen> {
     ),
   );
 
-  // conteúdo e botões do destaque — dinâmico com dados reais do filme
   Widget _buildHeroContent(Movie hero) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
       Row(
         children: [
-          _badge("TRENDING #1"),
+          _badge(
+            _selectedCategory == "ALL" ? "TRENDING #1" : _selectedCategory,
+          ),
           const SizedBox(width: 10),
           const Icon(Icons.star_rounded, color: AppTheme.primaryRed, size: 16),
           const SizedBox(width: 4),
           Text(
             hero.voteAverage.toStringAsFixed(1),
-            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900),
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w900,
+            ),
           ),
         ],
       ),
@@ -167,7 +193,12 @@ class _HomeScreenState extends State<HomeScreen> {
       const SizedBox(height: 30),
       Row(
         children: [
-          Expanded(child: _actionBtn("VIEW DETAILS", onTap: () => _openDetail(context, hero))),
+          Expanded(
+            child: _actionBtn(
+              "VIEW DETAILS",
+              onTap: () => _openDetail(context, hero),
+            ),
+          ),
           const SizedBox(width: 15),
           _favBtn(),
         ],
@@ -175,80 +206,82 @@ class _HomeScreenState extends State<HomeScreen> {
     ],
   );
 
-  // menu horizontal de categorias
-  Widget _buildCategories() {
-    final cats = [
-      "ALL",
-      "ACTION",
-      "ADVENTURE",
-      "ANIMATION",
-      "COMEDY",
-      "CRIME",
-      "DOCUMENTARY",
-      "DRAMA",
-      "FAMILY",
-    ];
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-      child: Row(
-        children: cats.map((cat) {
-          bool isSel = _selectedCategory == cat;
-          return GestureDetector(
-            onTap: () => setState(() => _selectedCategory = cat),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              margin: const EdgeInsets.only(right: 10),
-              padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
-              decoration: BoxDecoration(
-                color: isSel ? AppTheme.primaryRed : const Color(0xFF16171D),
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(
-                  color: isSel
-                      ? Colors.transparent
-                      : Colors.white.withValues(alpha: 0.05),
-                ),
-                boxShadow: isSel
-                    ? [
-                        BoxShadow(
-                          color: AppTheme.primaryRed.withValues(alpha: 0.3),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ]
-                    : [],
+  Widget _buildCategories() => SingleChildScrollView(
+    scrollDirection: Axis.horizontal,
+    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+    child: Row(
+      children: _categories.map((cat) {
+        final isSel = _selectedCategory == cat.name;
+        return GestureDetector(
+          onTap: () => _selectCategory(cat),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            margin: const EdgeInsets.only(right: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
+            decoration: BoxDecoration(
+              color: isSel ? AppTheme.primaryRed : const Color(0xFF16171D),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: isSel
+                    ? Colors.transparent
+                    : Colors.white.withValues(alpha: 0.05),
               ),
-              child: Text(
-                cat,
-                style: TextStyle(
-                  color: isSel ? Colors.white : Colors.grey.shade500,
-                  fontWeight: FontWeight.w900,
-                  fontSize: 11,
-                  letterSpacing: 1.2,
-                  fontStyle: FontStyle.italic,
-                ),
+              boxShadow: isSel
+                  ? [
+                      BoxShadow(
+                        color: AppTheme.primaryRed.withValues(alpha: 0.3),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ]
+                  : [],
+            ),
+            child: Text(
+              "${cat.emoji} ${cat.name}",
+              style: TextStyle(
+                color: isSel ? Colors.white : Colors.grey.shade500,
+                fontWeight: FontWeight.w900,
+                fontSize: 11,
+                letterSpacing: 1.2,
+                fontStyle: FontStyle.italic,
               ),
             ),
-          );
-        }).toList(),
-      ),
+          ),
+        );
+      }).toList(),
+    ),
+  );
+
+  Widget _buildMovieSections() {
+    if (_selectedCategory != "ALL") {
+      return Column(
+        children: [
+          _sectionTitle(
+            "${_selectedCategoryEmoji()} $_selectedCategory Movies",
+          ),
+          _movieList(_genreMovies, 'poster'),
+          const SizedBox(height: 120),
+        ],
+      );
+    }
+
+    return Column(
+      children: [
+        _sectionTitle("✨ Global Trending"),
+        _movieList(_trending, 'backdrop'),
+        _sectionTitle("🔥 Hot Hits"),
+        _movieList(_popular, 'poster'),
+        _sectionTitle("🎬 Upcoming Releases"),
+        _movieList(_upcoming, 'backdrop'),
+        const SizedBox(height: 120),
+      ],
     );
   }
 
-  // organiza as diferentes filas de filmes
-  Widget _buildMovieSections() => Column(
-    children: [
-      _sectionTitle("✨ Global Trending"),
-      _movieList(_trending, 'backdrop'),
-      _sectionTitle("🔥 Hot Hits"),
-      _movieList(_popular, 'poster'),
-      _sectionTitle("🎬 Upcoming Releases"),
-      _movieList(_upcoming, 'backdrop'),
-      const SizedBox(height: 120),
-    ],
-  );
+  String _selectedCategoryEmoji() => _categories
+      .firstWhere((category) => category.name == _selectedCategory)
+      .emoji;
 
-  // componente para o título de cada secção
   Widget _sectionTitle(String title) => Padding(
     padding: const EdgeInsets.fromLTRB(20, 10, 20, 15),
     child: Row(
@@ -268,7 +301,6 @@ class _HomeScreenState extends State<HomeScreen> {
     ),
   );
 
-  // constrói as listas horizontais com os dados da API
   Widget _movieList(Future<List<Movie>> future, String layout) => SizedBox(
     height: layout == 'backdrop' ? 160 : 220,
     child: FutureBuilder<List<Movie>>(
@@ -279,63 +311,73 @@ class _HomeScreenState extends State<HomeScreen> {
             child: CircularProgressIndicator(color: AppTheme.primaryRed),
           );
         }
+
+        if (snapshot.data!.isEmpty) {
+          return const Center(
+            child: Text(
+              "No movies found.",
+              style: TextStyle(color: Colors.white54),
+            ),
+          );
+        }
+
         return ListView.builder(
           scrollDirection: Axis.horizontal,
           padding: const EdgeInsets.only(left: 20),
           itemCount: snapshot.data!.length,
           itemBuilder: (context, i) => layout == 'poster'
-              ? MovieCard(movie: snapshot.data![i], onTap: () => _openDetail(context, snapshot.data![i]))
+              ? MovieCard(
+                  movie: snapshot.data![i],
+                  onTap: () => _openDetail(context, snapshot.data![i]),
+                )
               : _backdropItem(snapshot.data![i]),
         );
       },
     ),
   );
 
-  // abre a página de detalhes do filme
   void _openDetail(BuildContext ctx, Movie movie) => Navigator.push(
     ctx,
     MaterialPageRoute(builder: (_) => MovieDetailScreen(movie: movie)),
   );
 
-  // componente para item horizontal largo
-  Widget _backdropItem(Movie m) => GestureDetector(
-    onTap: () => _openDetail(context, m),
+  Widget _backdropItem(Movie movie) => GestureDetector(
+    onTap: () => _openDetail(context, movie),
     child: Container(
-    width: 240,
-    margin: const EdgeInsets.only(right: 15),
-    decoration: BoxDecoration(
-      borderRadius: BorderRadius.circular(16),
-      image: DecorationImage(
-        image: NetworkImage(m.fullBackdropPath),
-        fit: BoxFit.cover,
-      ),
-    ),
-    child: Container(
-      padding: const EdgeInsets.all(12),
+      width: 240,
+      margin: const EdgeInsets.only(right: 15),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
-        gradient: LinearGradient(
-          begin: Alignment.bottomCenter,
-          end: Alignment.topCenter,
-          colors: [Colors.black.withValues(alpha: 0.8), Colors.transparent],
+        image: DecorationImage(
+          image: NetworkImage(movie.fullBackdropPath),
+          fit: BoxFit.cover,
         ),
       ),
-      child: Align(
-        alignment: Alignment.bottomLeft,
-        child: Text(
-          m.title.toUpperCase(),
-          style: const TextStyle(
-            fontSize: 10,
-            fontWeight: FontWeight.w900,
-            fontStyle: FontStyle.italic,
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          gradient: LinearGradient(
+            begin: Alignment.bottomCenter,
+            end: Alignment.topCenter,
+            colors: [Colors.black.withValues(alpha: 0.8), Colors.transparent],
+          ),
+        ),
+        child: Align(
+          alignment: Alignment.bottomLeft,
+          child: Text(
+            movie.title.toUpperCase(),
+            style: const TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w900,
+              fontStyle: FontStyle.italic,
+            ),
           ),
         ),
       ),
     ),
-  ),
-);
+  );
 
-  // widgets de apoio para botões e etiquetas
   Widget _badge(String txt) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
     decoration: BoxDecoration(
@@ -351,6 +393,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     ),
   );
+
   Widget _actionBtn(String txt, {VoidCallback? onTap}) => SizedBox(
     height: 56,
     child: ElevatedButton.icon(
@@ -365,6 +408,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     ),
   );
+
   Widget _favBtn() => Container(
     height: 56,
     width: 56,
@@ -375,4 +419,12 @@ class _HomeScreenState extends State<HomeScreen> {
     ),
     child: const Icon(Icons.favorite_border_rounded, color: Colors.white),
   );
+}
+
+class _HomeCategory {
+  final String name;
+  final int? id;
+  final String emoji;
+
+  const _HomeCategory(this.name, this.id, this.emoji);
 }

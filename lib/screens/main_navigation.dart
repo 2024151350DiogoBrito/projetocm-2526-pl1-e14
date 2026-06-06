@@ -105,6 +105,12 @@ class _MainNavigationState extends State<MainNavigation> {
     });
   }
 
+  void _clearRecentSearches() {
+    setState(() {
+      _recentSearches.clear();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final List<Widget> screens = [
@@ -114,6 +120,7 @@ class _MainNavigationState extends State<MainNavigation> {
         recentSearches: _recentSearches,
         onAddFavorite: _addFavorite,
         onAddRecentSearch: _addRecentSearch,
+        onClearRecentSearches: _clearRecentSearches,
       ),
       FavoritesScreen(
         favoriteMovies: _favoriteMovies,

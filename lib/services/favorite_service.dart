@@ -12,7 +12,7 @@ class FavoriteService {
   String get _currentUid {
     final uid = _auth.currentUser?.uid;
     if (uid == null) {
-      throw Exception('Tens de iniciar sessÃ£o para gerir favoritos.');
+      throw Exception('Tens de iniciar sessão para gerir favoritos.');
     }
     return uid;
   }

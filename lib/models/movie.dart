@@ -38,6 +38,28 @@ class Movie {
     genreIds: List<int>.from(json['genre_ids'] ?? []),
   );
 
+  factory Movie.fromMap(Map<String, dynamic> map) => Movie(
+    id: map['id'],
+    title: map['title'] ?? 'Sem TÃ­tulo',
+    posterPath: map['posterPath'],
+    backdropPath: map['backdropPath'],
+    voteAverage: (map['voteAverage'] as num? ?? 0.0).toDouble(),
+    releaseDate: map['releaseDate'] ?? '',
+    overview: map['overview'] ?? 'Nenhuma descriÃ§Ã£o disponÃ­vel.',
+    genreIds: List<int>.from(map['genreIds'] ?? []),
+  );
+
+  Map<String, dynamic> toMap() => {
+    'id': id,
+    'title': title,
+    'posterPath': posterPath,
+    'backdropPath': backdropPath,
+    'voteAverage': voteAverage,
+    'releaseDate': releaseDate,
+    'overview': overview,
+    'genreIds': genreIds,
+  };
+
   // gera a URL completa para o poster
   String get fullPosterPath => posterPath != null
       ? '$_imageBaseUrl/w500$posterPath'

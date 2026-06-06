@@ -1,30 +1,28 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
-import 'package:movienest/main.dart';
+import 'package:movienest/models/movie.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MovieNestApp());
+  test('Movie converts to and from Firestore map', () {
+    final movie = Movie(
+      id: 1,
+      title: 'MovieNest Test',
+      posterPath: '/poster.jpg',
+      backdropPath: '/backdrop.jpg',
+      voteAverage: 8.5,
+      releaseDate: '2026-06-06',
+      overview: 'Teste de favoritos.',
+      genreIds: [28, 12],
+    );
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    final restoredMovie = Movie.fromMap(movie.toMap());
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
-
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    expect(restoredMovie.id, movie.id);
+    expect(restoredMovie.title, movie.title);
+    expect(restoredMovie.posterPath, movie.posterPath);
+    expect(restoredMovie.backdropPath, movie.backdropPath);
+    expect(restoredMovie.voteAverage, movie.voteAverage);
+    expect(restoredMovie.releaseDate, movie.releaseDate);
+    expect(restoredMovie.overview, movie.overview);
+    expect(restoredMovie.genreIds, movie.genreIds);
   });
 }

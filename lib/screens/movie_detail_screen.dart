@@ -42,7 +42,9 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                 return const SizedBox(
                   height: 300,
                   child: Center(
-                    child: CircularProgressIndicator(color: AppTheme.primaryRed),
+                    child: CircularProgressIndicator(
+                      color: AppTheme.primaryRed,
+                    ),
                   ),
                 );
               }
@@ -74,10 +76,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
     backgroundColor: AppTheme.deepBlack,
     leading: Padding(
       padding: const EdgeInsets.all(8),
-      child: _circleBtn(
-        Icons.arrow_back_rounded,
-        () => Navigator.pop(context),
-      ),
+      child: _circleBtn(Icons.arrow_back_rounded, () => Navigator.pop(context)),
     ),
     actions: [
       Padding(
@@ -153,7 +152,8 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                         width: 90,
                         height: 130,
                         fit: BoxFit.cover,
-                        errorWidget: (_, __, ___) => const SizedBox.shrink(),
+                        errorWidget: (context, url, error) =>
+                            const SizedBox.shrink(),
                       ),
                     );
                   },
@@ -196,11 +196,14 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
-          children: List.generate(5, (i) => Icon(
-            i < stars ? Icons.star_rounded : Icons.star_outline_rounded,
-            color: AppTheme.primaryRed,
-            size: 16,
-          )),
+          children: List.generate(
+            5,
+            (i) => Icon(
+              i < stars ? Icons.star_rounded : Icons.star_outline_rounded,
+              color: AppTheme.primaryRed,
+              size: 16,
+            ),
+          ),
         ),
         const SizedBox(height: 4),
         Text(
@@ -225,11 +228,17 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
           const SizedBox(width: 10),
         ],
         if (widget.movie.releaseDate.isNotEmpty) ...[
-          _metaChip(Icons.calendar_today_rounded, widget.movie.releaseDate.substring(0, 4)),
+          _metaChip(
+            Icons.calendar_today_rounded,
+            widget.movie.releaseDate.substring(0, 4),
+          ),
           const SizedBox(width: 10),
         ],
         if (detail.originalLanguage.isNotEmpty)
-          _metaChip(Icons.language_rounded, detail.originalLanguage.toUpperCase()),
+          _metaChip(
+            Icons.language_rounded,
+            detail.originalLanguage.toUpperCase(),
+          ),
         const Spacer(),
         // badge de classificação
         if (detail.status.isNotEmpty)
@@ -238,7 +247,9 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
             decoration: BoxDecoration(
               color: AppTheme.primaryRed.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: AppTheme.primaryRed.withValues(alpha: 0.5)),
+              border: Border.all(
+                color: AppTheme.primaryRed.withValues(alpha: 0.5),
+              ),
             ),
             child: Text(
               detail.status.toUpperCase(),
@@ -289,23 +300,32 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
           Wrap(
             spacing: 8,
             runSpacing: 8,
-            children: detail.genres.map((g) => Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-              decoration: BoxDecoration(
-                color: const Color(0xFF16171D),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
-              ),
-              child: Text(
-                g.toUpperCase(),
-                style: const TextStyle(
-                  color: Colors.white70,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 0.8,
-                ),
-              ),
-            )).toList(),
+            children: detail.genres
+                .map(
+                  (g) => Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF16171D),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.08),
+                      ),
+                    ),
+                    child: Text(
+                      g.toUpperCase(),
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.8,
+                      ),
+                    ),
+                  ),
+                )
+                .toList(),
           ),
         ],
       ),
@@ -332,7 +352,12 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
           children: [
             Expanded(child: _infoCard('Votes', '${detail.voteCount} votes')),
             const SizedBox(width: 12),
-            Expanded(child: _infoCard('Popularity', detail.popularity.toStringAsFixed(0))),
+            Expanded(
+              child: _infoCard(
+                'Popularity',
+                detail.popularity.toStringAsFixed(0),
+              ),
+            ),
           ],
         ),
       ],
@@ -375,7 +400,10 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
               }
               if (snapshot.data!.isEmpty) {
                 return const Center(
-                  child: Text('No similar movies found.', style: TextStyle(color: Colors.white38)),
+                  child: Text(
+                    'No similar movies found.',
+                    style: TextStyle(color: Colors.white38),
+                  ),
                 );
               }
               return ListView.builder(
@@ -481,20 +509,23 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
   );
 
   // widgets auxiliares
-  Widget _circleBtn(IconData icon, VoidCallback onTap, {Color iconColor = Colors.white}) =>
-      GestureDetector(
-        onTap: onTap,
-        child: Container(
-          width: 38,
-          height: 38,
-          decoration: BoxDecoration(
-            color: Colors.black.withValues(alpha: 0.5),
-            shape: BoxShape.circle,
-            border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
-          ),
-          child: Icon(icon, color: iconColor, size: 20),
-        ),
-      );
+  Widget _circleBtn(
+    IconData icon,
+    VoidCallback onTap, {
+    Color iconColor = Colors.white,
+  }) => GestureDetector(
+    onTap: onTap,
+    child: Container(
+      width: 38,
+      height: 38,
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.5),
+        shape: BoxShape.circle,
+        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+      ),
+      child: Icon(icon, color: iconColor, size: 20),
+    ),
+  );
 
   Widget _metaChip(IconData icon, String text) => Row(
     mainAxisSize: MainAxisSize.min,
@@ -585,7 +616,9 @@ class MovieDetail {
     runtime: json['runtime'] ?? 0,
     status: json['status'] ?? '',
     originalLanguage: json['original_language'] ?? '',
-    genres: (json['genres'] as List? ?? []).map((g) => g['name'] as String).toList(),
+    genres: (json['genres'] as List? ?? [])
+        .map((g) => g['name'] as String)
+        .toList(),
     budget: json['budget'] ?? 0,
     revenue: json['revenue'] ?? 0,
     voteCount: json['vote_count'] ?? 0,
@@ -593,9 +626,8 @@ class MovieDetail {
     posterPath: json['poster_path'],
   );
 
-  String? get fullPosterPath => posterPath != null
-      ? '$_imageBaseUrl/w500$posterPath'
-      : null;
+  String? get fullPosterPath =>
+      posterPath != null ? '$_imageBaseUrl/w500$posterPath' : null;
 
   // formata duração em horas e minutos
   String get runtimeFormatted {
@@ -608,7 +640,9 @@ class MovieDetail {
   // formata valores monetários
   String _formatMoney(int value) {
     if (value <= 0) return 'N/A';
-    if (value >= 1000000000) return '\$${(value / 1000000000).toStringAsFixed(1)}B';
+    if (value >= 1000000000) {
+      return '\$${(value / 1000000000).toStringAsFixed(1)}B';
+    }
     if (value >= 1000000) return '\$${(value / 1000000).toStringAsFixed(0)}M';
     return '\$$value';
   }

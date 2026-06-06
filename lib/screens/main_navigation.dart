@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../models/movie.dart';
+import '../services/favorite_service.dart';
 import '../theme/app_theme.dart';
 import 'home_screen.dart';
 import 'search_screen.dart';
@@ -19,19 +20,72 @@ class _MainNavigationState extends State<MainNavigation> {
 
   final List<Movie> _favoriteMovies = [];
   final List<String> _recentSearches = [];
+  final FavoriteService _favoriteService = FavoriteService();
+  bool _isLoadingFavorites = true;
 
-  void _addFavorite(Movie movie) {
-    setState(() {
-      if (!_favoriteMovies.any((m) => m.id == movie.id)) {
-        _favoriteMovies.add(movie);
-      }
-    });
+  @override
+  void initState() {
+    super.initState();
+    _loadFavorites();
   }
 
-  void _removeFavorite(Movie movie) {
+  Future<void> _loadFavorites() async {
+    try {
+      final favorites = await _favoriteService.getFavorites();
+
+      if (!mounted) return;
+
+      setState(() {
+        _favoriteMovies
+          ..clear()
+          ..addAll(favorites);
+        _isLoadingFavorites = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _isLoadingFavorites = false);
+    }
+  }
+
+  Future<void> _addFavorite(Movie movie) async {
+    if (_favoriteMovies.any((m) => m.id == movie.id)) {
+      return;
+    }
+
+    setState(() {
+      _favoriteMovies.add(movie);
+    });
+
+    try {
+      await _favoriteService.addFavorite(movie);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _favoriteMovies.removeWhere((m) => m.id == movie.id);
+      });
+    }
+  }
+
+  Future<void> _removeFavorite(Movie movie) async {
+    final removedIndex = _favoriteMovies.indexWhere((m) => m.id == movie.id);
+    if (removedIndex == -1) {
+      return;
+    }
+
+    final removedMovie = _favoriteMovies[removedIndex];
+
     setState(() {
       _favoriteMovies.removeWhere((m) => m.id == movie.id);
     });
+
+    try {
+      await _favoriteService.removeFavorite(movie);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _favoriteMovies.insert(removedIndex, removedMovie);
+      });
+    }
   }
 
   void _addRecentSearch(String text) {
@@ -70,45 +124,49 @@ class _MainNavigationState extends State<MainNavigation> {
 
     return Scaffold(
       extendBody: true,
-      body: screens[_idx],
+      body: _isLoadingFavorites
+          ? const Center(
+              child: CircularProgressIndicator(color: AppTheme.primaryRed),
+            )
+          : screens[_idx],
       bottomNavigationBar: _buildFloatingBar(),
     );
   }
 
   Widget _buildFloatingBar() => Container(
-        height: 90,
-        margin: const EdgeInsets.fromLTRB(24, 0, 24, 30),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(30),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-            child: Container(
-              decoration: BoxDecoration(
-                color: const Color(0xFF1C1E26).withValues(alpha: 0.8),
-                borderRadius: BorderRadius.circular(30),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
-              ),
-              child: BottomNavigationBar(
-                currentIndex: _idx,
-                onTap: (i) => setState(() => _idx = i),
-                backgroundColor: Colors.transparent,
-                elevation: 0,
-                type: BottomNavigationBarType.fixed,
-                selectedItemColor: AppTheme.primaryRed,
-                unselectedItemColor: Colors.grey.withValues(alpha: 0.5),
-                selectedFontSize: 8,
-                unselectedFontSize: 8,
-                items: [
-                  _navItem(Icons.home_rounded, "HOME", 0),
-                  _navItem(Icons.search_rounded, "SEARCH", 1),
-                  _navItem(Icons.favorite_rounded, "SAVED", 2),
-                  _navItem(Icons.person_rounded, "PROFILE", 3),
-                ],
-              ),
-            ),
+    height: 90,
+    margin: const EdgeInsets.fromLTRB(24, 0, 24, 30),
+    child: ClipRRect(
+      borderRadius: BorderRadius.circular(30),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+        child: Container(
+          decoration: BoxDecoration(
+            color: const Color(0xFF1C1E26).withValues(alpha: 0.8),
+            borderRadius: BorderRadius.circular(30),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+          ),
+          child: BottomNavigationBar(
+            currentIndex: _idx,
+            onTap: (i) => setState(() => _idx = i),
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            type: BottomNavigationBarType.fixed,
+            selectedItemColor: AppTheme.primaryRed,
+            unselectedItemColor: Colors.grey.withValues(alpha: 0.5),
+            selectedFontSize: 8,
+            unselectedFontSize: 8,
+            items: [
+              _navItem(Icons.home_rounded, "HOME", 0),
+              _navItem(Icons.search_rounded, "SEARCH", 1),
+              _navItem(Icons.favorite_rounded, "SAVED", 2),
+              _navItem(Icons.person_rounded, "PROFILE", 3),
+            ],
           ),
         ),
-      );
+      ),
+    ),
+  );
 
   BottomNavigationBarItem _navItem(IconData icon, String label, int index) =>
       BottomNavigationBarItem(

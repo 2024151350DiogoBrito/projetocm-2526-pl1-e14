@@ -21,9 +21,14 @@ class _SplashScreenState extends State<SplashScreen> {
       // verifica se o ecrã ainda está ativo
       if (mounted) {
         // vai para o login e apaga a splash da memória
+        final user = FirebaseAuth.instance.currentUser;
+
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (_) => const LoginScreen()),
+          MaterialPageRoute(
+            builder: (_) =>
+                user == null ? const LoginScreen() : const MainNavigation(),
+          ),
         );
       }
     });

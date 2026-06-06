@@ -129,6 +129,7 @@ class _MainNavigationState extends State<MainNavigation> {
       ),
       FavoritesScreen(
         favoriteMovies: _favoriteMovies,
+        onAddFavorite: _addFavorite,
         onRemoveFavorite: _removeFavorite,
       ),
       const ProfileScreen(),

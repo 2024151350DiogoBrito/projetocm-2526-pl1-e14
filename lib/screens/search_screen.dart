@@ -3,6 +3,7 @@ import '../models/movie.dart';
 import '../services/tmdb_service.dart';
 import '../theme/app_theme.dart';
 import 'genre_movies_screen.dart';
+import 'movie_detail_screen.dart';
 
 class SearchScreen extends StatefulWidget {
   final List<Movie> favoriteMovies;
@@ -513,6 +514,17 @@ class _SearchScreenState extends State<SearchScreen> {
         return _MovieSearchItem(
           movie: movie,
           isFavorite: _isFavorite(movie),
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => MovieDetailScreen(
+                movie: movie,
+                isFavorite: _isFavorite(movie),
+                onAddFavorite: (movie) async => widget.onAddFavorite(movie),
+                onRemoveFavorite: widget.onRemoveFavorite,
+              ),
+            ),
+          ),
           onFavorite: () => _favoriteMovie(movie),
         );
       },
@@ -535,71 +547,76 @@ class _GenreItem {
 class _MovieSearchItem extends StatelessWidget {
   final Movie movie;
   final bool isFavorite;
+  final VoidCallback onTap;
   final VoidCallback onFavorite;
 
   const _MovieSearchItem({
     required this.movie,
     required this.isFavorite,
+    required this.onTap,
     required this.onFavorite,
   });
 
   @override
-  Widget build(BuildContext context) => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Expanded(
-        child: Stack(
-          children: [
-            Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(15),
-                image: DecorationImage(
-                  image: NetworkImage(movie.fullPosterPath),
-                  fit: BoxFit.cover,
-                ),
-              ),
-            ),
-            Positioned(
-              top: 8,
-              right: 8,
-              child: GestureDetector(
-                onTap: onFavorite,
-                child: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.6),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Icon(
-                    isFavorite
-                        ? Icons.favorite_rounded
-                        : Icons.favorite_border_rounded,
-                    color: AppTheme.primaryRed,
-                    size: 18,
+  Widget build(BuildContext context) => GestureDetector(
+    onTap: onTap,
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          child: Stack(
+            children: [
+              Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(15),
+                  image: DecorationImage(
+                    image: NetworkImage(movie.fullPosterPath),
+                    fit: BoxFit.cover,
                   ),
                 ),
               ),
-            ),
-          ],
+              Positioned(
+                top: 8,
+                right: 8,
+                child: GestureDetector(
+                  onTap: onFavorite,
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.6),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(
+                      isFavorite
+                          ? Icons.favorite_rounded
+                          : Icons.favorite_border_rounded,
+                      color: AppTheme.primaryRed,
+                      size: 18,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
-      ),
-      const SizedBox(height: 12),
-      Text(
-        movie.title.toUpperCase(),
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 13,
-          fontWeight: FontWeight.w900,
-          fontStyle: FontStyle.italic,
+        const SizedBox(height: 12),
+        Text(
+          movie.title.toUpperCase(),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 13,
+            fontWeight: FontWeight.w900,
+            fontStyle: FontStyle.italic,
+          ),
         ),
-      ),
-      const SizedBox(height: 2),
-      Text(
-        movie.releaseDate,
-        style: const TextStyle(color: Colors.white24, fontSize: 10),
-      ),
-    ],
+        const SizedBox(height: 2),
+        Text(
+          movie.releaseDate,
+          style: const TextStyle(color: Colors.white24, fontSize: 10),
+        ),
+      ],
+    ),
   );
 }

@@ -56,9 +56,90 @@ class TmdbService {
     throw Exception('Erro ao carregar detalhes: ${response.statusCode}');
   }
 
+  Future<MovieCredits> getMovieCredits(int movieId) async {
+    final data = await _getJson('movie/$movieId/credits');
+    return MovieCredits.fromJson(data);
+  }
+
+  Future<List<WatchProvider>> getWatchProviders(int movieId) async {
+    final data = await _getJson('movie/$movieId/watch/providers');
+    final results = data['results'] as Map<String, dynamic>? ?? {};
+    final region = results['PT'] ?? results['US'];
+    final providers = region?['flatrate'] as List? ?? [];
+
+    return providers
+        .take(6)
+        .map((provider) => WatchProvider.fromJson(provider))
+        .toList();
+  }
+
+  Future<List<String>> getMovieImages(int movieId) async {
+    final data = await _getJson('movie/$movieId/images', {
+      'include_image_language': 'en,null',
+    });
+    final backdrops = data['backdrops'] as List? ?? [];
+
+    return backdrops
+        .take(8)
+        .map((image) => image['file_path'] as String?)
+        .whereType<String>()
+        .map((path) => 'https://image.tmdb.org/t/p/w780$path')
+        .toList();
+  }
+
+  Future<String?> getMovieTrailerKey(int movieId) async {
+    final data = await _getJson('movie/$movieId/videos');
+    final videos = data['results'] as List? ?? [];
+
+    for (final video in videos) {
+      if (video['site'] == 'YouTube' && video['type'] == 'Trailer') {
+        return video['key'] as String?;
+      }
+    }
+
+    return null;
+  }
+
+  Future<PersonDetail> getPersonDetails(int personId) async {
+    final data = await _getJson('person/$personId');
+    return PersonDetail.fromJson(data);
+  }
+
+  Future<List<Movie>> getPersonMovieCredits(int personId) async {
+    final data = await _getJson('person/$personId/movie_credits');
+    final cast = data['cast'] as List? ?? [];
+
+    return cast
+        .where(
+          (movie) =>
+              movie['poster_path'] != null &&
+              movie['backdrop_path'] != null &&
+              movie['adult'] != true &&
+              _looksSafeTitle(movie['title'] ?? ''),
+        )
+        .map((movie) => Movie.fromJson(movie))
+        .toList();
+  }
+
   // vai buscar filmes semelhantes
   Future<List<Movie>> getSimilarMovies(int movieId) =>
       _fetchMovies('movie/$movieId/similar');
+
+  Future<Map<String, dynamic>> _getJson(
+    String endpoint, [
+    Map<String, String>? params,
+  ]) async {
+    final uri = Uri.parse('$_baseUrl/$endpoint').replace(
+      queryParameters: {'api_key': _apiKey, 'language': 'en-US', ...?params},
+    );
+
+    final response = await http.get(uri);
+    if (response.statusCode == 200) {
+      return json.decode(response.body) as Map<String, dynamic>;
+    }
+
+    throw Exception('Erro na API: ${response.statusCode}');
+  }
 
   // função que faz o pedido à rede e trata os dados
   Future<List<Movie>> _fetchMovies(
@@ -113,4 +194,108 @@ class TmdbService {
 
     return !blockedWords.any(text.contains);
   }
+}
+
+class MovieCredits {
+  final List<CastMember> cast;
+  final List<CrewMember> crew;
+
+  MovieCredits({required this.cast, required this.crew});
+
+  factory MovieCredits.fromJson(Map<String, dynamic> json) => MovieCredits(
+    cast: (json['cast'] as List? ?? [])
+        .map((member) => CastMember.fromJson(member))
+        .where((member) => member.profileUrl != null)
+        .toList(),
+    crew: (json['crew'] as List? ?? [])
+        .map((member) => CrewMember.fromJson(member))
+        .toList(),
+  );
+
+  CrewMember? get director {
+    for (final member in crew) {
+      if (member.job.toLowerCase() == 'director') return member;
+    }
+    return crew.isEmpty ? null : crew.first;
+  }
+}
+
+class CastMember {
+  final int id;
+  final String name;
+  final String character;
+  final String? profileUrl;
+
+  CastMember({
+    required this.id,
+    required this.name,
+    required this.character,
+    this.profileUrl,
+  });
+
+  factory CastMember.fromJson(Map<String, dynamic> json) => CastMember(
+    id: json['id'] ?? 0,
+    name: json['name'] ?? '',
+    character: json['character'] ?? '',
+    profileUrl: json['profile_path'] == null
+        ? null
+        : 'https://image.tmdb.org/t/p/w300${json['profile_path']}',
+  );
+}
+
+class CrewMember {
+  final String name;
+  final String job;
+  final String? profileUrl;
+
+  CrewMember({required this.name, required this.job, this.profileUrl});
+
+  factory CrewMember.fromJson(Map<String, dynamic> json) => CrewMember(
+    name: json['name'] ?? '',
+    job: json['job'] ?? '',
+    profileUrl: json['profile_path'] == null
+        ? null
+        : 'https://image.tmdb.org/t/p/w300${json['profile_path']}',
+  );
+}
+
+class WatchProvider {
+  final String name;
+  final String logoUrl;
+
+  WatchProvider({required this.name, required this.logoUrl});
+
+  factory WatchProvider.fromJson(Map<String, dynamic> json) => WatchProvider(
+    name: json['provider_name'] ?? '',
+    logoUrl: 'https://image.tmdb.org/t/p/w185${json['logo_path']}',
+  );
+}
+
+class PersonDetail {
+  final String name;
+  final String biography;
+  final String? profileUrl;
+  final String knownFor;
+  final String birthday;
+  final String placeOfBirth;
+
+  PersonDetail({
+    required this.name,
+    required this.biography,
+    this.profileUrl,
+    required this.knownFor,
+    required this.birthday,
+    required this.placeOfBirth,
+  });
+
+  factory PersonDetail.fromJson(Map<String, dynamic> json) => PersonDetail(
+    name: json['name'] ?? '',
+    biography: json['biography'] ?? '',
+    profileUrl: json['profile_path'] == null
+        ? null
+        : 'https://image.tmdb.org/t/p/w500${json['profile_path']}',
+    knownFor: json['known_for_department'] ?? '',
+    birthday: json['birthday'] ?? '',
+    placeOfBirth: json['place_of_birth'] ?? '',
+  );
 }

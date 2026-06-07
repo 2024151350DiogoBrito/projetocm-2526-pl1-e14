@@ -133,7 +133,7 @@ class _GenreMoviesScreenState extends State<GenreMoviesScreen> {
   );
 
   bool _isFavorite(Movie movie) {
-    return widget.favoriteMovies.any((m) => m.id == movie.id);
+    return widget.favoriteMovies.any((m) => m.sameAs(movie));
   }
 }
 

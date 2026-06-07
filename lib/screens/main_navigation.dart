@@ -2,10 +2,12 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../models/movie.dart';
 import '../services/favorite_service.dart';
+import '../services/notification_service.dart';
 import '../theme/app_theme.dart';
 import 'home_screen.dart';
 import 'search_screen.dart';
 import 'favorites_screen.dart';
+import 'notifications_screen.dart';
 import 'profile_screen.dart';
 
 class MainNavigation extends StatefulWidget {
@@ -21,7 +23,9 @@ class _MainNavigationState extends State<MainNavigation> {
   final List<Movie> _favoriteMovies = [];
   final List<String> _recentSearches = [];
   final FavoriteService _favoriteService = FavoriteService();
+  final NotificationService _notificationService = NotificationService();
   bool _isLoadingFavorites = true;
+  int _unreadNotifications = 0;
 
   @override
   void initState() {
@@ -41,6 +45,7 @@ class _MainNavigationState extends State<MainNavigation> {
           ..addAll(favorites);
         _isLoadingFavorites = false;
       });
+      _refreshNotifications();
     } catch (_) {
       if (!mounted) return;
       setState(() => _isLoadingFavorites = false);
@@ -48,7 +53,7 @@ class _MainNavigationState extends State<MainNavigation> {
   }
 
   Future<void> _addFavorite(Movie movie) async {
-    if (_favoriteMovies.any((m) => m.id == movie.id)) {
+    if (_favoriteMovies.any((m) => m.sameAs(movie))) {
       return;
     }
 
@@ -58,16 +63,18 @@ class _MainNavigationState extends State<MainNavigation> {
 
     try {
       await _favoriteService.addFavorite(movie);
+      await _notificationService.prepareFavorite(movie);
+      await _refreshNotifications();
     } catch (_) {
       if (!mounted) return;
       setState(() {
-        _favoriteMovies.removeWhere((m) => m.id == movie.id);
+        _favoriteMovies.removeWhere((m) => m.sameAs(movie));
       });
     }
   }
 
   Future<void> _removeFavorite(Movie movie) async {
-    final removedIndex = _favoriteMovies.indexWhere((m) => m.id == movie.id);
+    final removedIndex = _favoriteMovies.indexWhere((m) => m.sameAs(movie));
     if (removedIndex == -1) {
       return;
     }
@@ -75,7 +82,7 @@ class _MainNavigationState extends State<MainNavigation> {
     final removedMovie = _favoriteMovies[removedIndex];
 
     setState(() {
-      _favoriteMovies.removeWhere((m) => m.id == movie.id);
+      _favoriteMovies.removeWhere((m) => m.sameAs(movie));
     });
 
     try {
@@ -111,6 +118,25 @@ class _MainNavigationState extends State<MainNavigation> {
     });
   }
 
+  Future<void> _refreshNotifications() async {
+    try {
+      await _notificationService.checkSavedItems();
+      final unread = await _notificationService.getUnreadCount();
+      if (!mounted) return;
+      setState(() => _unreadNotifications = unread);
+    } catch (_) {
+      // Notifications are secondary; the app should keep working if they fail.
+    }
+  }
+
+  Future<void> _openNotifications() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const NotificationsScreen()),
+    );
+    await _refreshNotifications();
+  }
+
   @override
   Widget build(BuildContext context) {
     final List<Widget> screens = [
@@ -118,6 +144,8 @@ class _MainNavigationState extends State<MainNavigation> {
         favoriteMovies: _favoriteMovies,
         onAddFavorite: _addFavorite,
         onRemoveFavorite: _removeFavorite,
+        onOpenNotifications: _openNotifications,
+        unreadNotifications: _unreadNotifications,
       ),
       SearchScreen(
         favoriteMovies: _favoriteMovies,

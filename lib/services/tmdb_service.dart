@@ -10,25 +10,37 @@ class TmdbService {
   static const String _baseUrl = 'https://api.themoviedb.org/3';
 
   // vai buscar os filmes em tendência
-  Future<List<Movie>> getTrendingMovies() => _fetchMovies('trending/movie/day');
+  Future<List<Movie>> getTrendingMovies() => _fetchMovies('trending/all/day');
 
   // vai buscar os filmes populares
-  Future<List<Movie>> getPopularMovies() => _fetchMovies('movie/popular');
+  Future<List<Movie>> getPopularMovies() async {
+    final movies = await _fetchMovies('movie/popular');
+    final series = await _fetchMovies('tv/popular');
+    return _sortByPopularity([...movies, ...series]);
+  }
 
   // pesquisa filmes por nome
   Future<List<Movie>> searchMovies(String query) => query.isEmpty
       ? Future.value([])
-      : _fetchMovies('search/movie', {'query': query});
+      : _fetchMovies('search/multi', {'query': query});
 
   // vai buscar os filmes mais populares de um género específico sem conteúdo +18
-  Future<List<Movie>> getMoviesByGenre(int genreId) =>
-      _fetchMovies('discover/movie', {
-        'with_genres': genreId.toString(),
-        'sort_by': 'popularity.desc',
-        'vote_count.gte': '300',
-        'certification_country': 'US',
-        'certification.lte': 'PG-13',
-      });
+  Future<List<Movie>> getMoviesByGenre(int genreId) async {
+    final movies = await _fetchMovies('discover/movie', {
+      'with_genres': genreId.toString(),
+      'sort_by': 'popularity.desc',
+      'vote_count.gte': '300',
+      'certification_country': 'US',
+      'certification.lte': 'PG-13',
+    });
+    final series = await _fetchMovies('discover/tv', {
+      'with_genres': genreId.toString(),
+      'sort_by': 'popularity.desc',
+      'vote_count.gte': '300',
+    });
+
+    return _sortByPopularity([...movies, ...series]);
+  }
 
   // vai buscar as próximas estreias com filtros
   Future<List<Movie>> getUpcomingMovies() {
@@ -45,9 +57,13 @@ class TmdbService {
   }
 
   // vai buscar os detalhes completos de um filme
-  Future<MovieDetail> getMovieDetails(int movieId) async {
+  Future<MovieDetail> getMovieDetails(
+    int movieId, {
+    String mediaType = 'movie',
+  }) async {
+    final endpoint = mediaType == 'tv' ? 'tv' : 'movie';
     final uri = Uri.parse(
-      '$_baseUrl/movie/$movieId',
+      '$_baseUrl/$endpoint/$movieId',
     ).replace(queryParameters: {'api_key': _apiKey, 'language': 'en-US'});
     final response = await http.get(uri);
     if (response.statusCode == 200) {
@@ -56,13 +72,21 @@ class TmdbService {
     throw Exception('Erro ao carregar detalhes: ${response.statusCode}');
   }
 
-  Future<MovieCredits> getMovieCredits(int movieId) async {
-    final data = await _getJson('movie/$movieId/credits');
+  Future<MovieCredits> getMovieCredits(
+    int movieId, {
+    String mediaType = 'movie',
+  }) async {
+    final endpoint = mediaType == 'tv' ? 'tv' : 'movie';
+    final data = await _getJson('$endpoint/$movieId/credits');
     return MovieCredits.fromJson(data);
   }
 
-  Future<List<WatchProvider>> getWatchProviders(int movieId) async {
-    final data = await _getJson('movie/$movieId/watch/providers');
+  Future<List<WatchProvider>> getWatchProviders(
+    int movieId, {
+    String mediaType = 'movie',
+  }) async {
+    final endpoint = mediaType == 'tv' ? 'tv' : 'movie';
+    final data = await _getJson('$endpoint/$movieId/watch/providers');
     final results = data['results'] as Map<String, dynamic>? ?? {};
     final region = results['PT'] ?? results['US'];
     final providers = region?['flatrate'] as List? ?? [];
@@ -73,8 +97,12 @@ class TmdbService {
         .toList();
   }
 
-  Future<List<String>> getMovieImages(int movieId) async {
-    final data = await _getJson('movie/$movieId/images', {
+  Future<List<String>> getMovieImages(
+    int movieId, {
+    String mediaType = 'movie',
+  }) async {
+    final endpoint = mediaType == 'tv' ? 'tv' : 'movie';
+    final data = await _getJson('$endpoint/$movieId/images', {
       'include_image_language': 'en,null',
     });
     final backdrops = data['backdrops'] as List? ?? [];
@@ -87,8 +115,12 @@ class TmdbService {
         .toList();
   }
 
-  Future<String?> getMovieTrailerKey(int movieId) async {
-    final data = await _getJson('movie/$movieId/videos');
+  Future<String?> getMovieTrailerKey(
+    int movieId, {
+    String mediaType = 'movie',
+  }) async {
+    final endpoint = mediaType == 'tv' ? 'tv' : 'movie';
+    final data = await _getJson('$endpoint/$movieId/videos');
     final videos = data['results'] as List? ?? [];
 
     for (final video in videos) {
@@ -106,7 +138,7 @@ class TmdbService {
   }
 
   Future<List<Movie>> getPersonMovieCredits(int personId) async {
-    final data = await _getJson('person/$personId/movie_credits');
+    final data = await _getJson('person/$personId/combined_credits');
     final cast = data['cast'] as List? ?? [];
 
     return cast
@@ -115,15 +147,74 @@ class TmdbService {
               movie['poster_path'] != null &&
               movie['backdrop_path'] != null &&
               movie['adult'] != true &&
-              _looksSafeTitle(movie['title'] ?? ''),
+              (movie['media_type'] == 'movie' || movie['media_type'] == 'tv') &&
+              _looksSafeTitle(movie['title'] ?? movie['name'] ?? ''),
         )
         .map((movie) => Movie.fromJson(movie))
         .toList();
   }
 
   // vai buscar filmes semelhantes
-  Future<List<Movie>> getSimilarMovies(int movieId) =>
-      _fetchMovies('movie/$movieId/similar');
+  Future<List<Movie>> getSimilarMovies(
+    int movieId, {
+    String mediaType = 'movie',
+  }) {
+    final endpoint = mediaType == 'tv' ? 'tv' : 'movie';
+    return _fetchMovies('$endpoint/$movieId/similar');
+  }
+
+  Future<List<Movie>> getSmartRecommendations(Movie source) async {
+    final endpoint = source.mediaType == 'tv' ? 'tv' : 'movie';
+    final detail = await _getJson('$endpoint/${source.id}');
+    final sourceLanguage = detail['original_language'] as String? ?? 'en';
+    final recommendations = <Movie>[];
+
+    if (source.mediaType == 'movie') {
+      final collection =
+          detail['belongs_to_collection'] as Map<String, dynamic>?;
+      final collectionId = collection?['id'];
+      if (collectionId is int) {
+        final collectionMovies = await _fetchCollectionMovies(
+          collectionId,
+          sourceLanguage,
+        );
+        recommendations.addAll(collectionMovies);
+      }
+    }
+
+    recommendations.addAll(
+      await _fetchMovies('$endpoint/${source.id}/recommendations'),
+    );
+
+    final keywords = await _getKeywords(source.id, source.mediaType);
+    if (keywords.isNotEmpty) {
+      recommendations.addAll(
+        await _fetchMovies('discover/$endpoint', {
+          'sort_by': 'popularity.desc',
+          'vote_count.gte': '300',
+          'with_keywords': keywords.take(4).join('|'),
+          if (sourceLanguage == 'en') 'with_original_language': 'en',
+        }),
+      );
+    }
+
+    if (recommendations.length < 10 && source.genreIds.isNotEmpty) {
+      recommendations.addAll(
+        await _fetchMovies('discover/$endpoint', {
+          'sort_by': 'popularity.desc',
+          'vote_count.gte': '500',
+          'with_genres': source.genreIds.take(2).join(','),
+          if (sourceLanguage == 'en') 'with_original_language': 'en',
+        }),
+      );
+    }
+
+    return _rankRecommendations(
+      recommendations,
+      source,
+      sourceLanguage,
+    ).take(18).toList();
+  }
 
   Future<Map<String, dynamic>> _getJson(
     String endpoint, [
@@ -139,6 +230,45 @@ class TmdbService {
     }
 
     throw Exception('Erro na API: ${response.statusCode}');
+  }
+
+  Future<List<Movie>> _fetchCollectionMovies(
+    int collectionId,
+    String sourceLanguage,
+  ) async {
+    final data = await _getJson('collection/$collectionId');
+    final parts = data['parts'] as List? ?? [];
+
+    return parts
+        .where(
+          (movie) =>
+              movie['poster_path'] != null &&
+              movie['backdrop_path'] != null &&
+              movie['adult'] != true &&
+              (sourceLanguage != 'en' || movie['original_language'] == 'en') &&
+              _looksSafeTitle(movie['title'] ?? ''),
+        )
+        .map((movie) => Movie.fromJson({...movie, 'media_type': 'movie'}))
+        .toList();
+  }
+
+  Future<List<String>> _getKeywords(int id, String mediaType) async {
+    final endpoint = mediaType == 'tv' ? 'tv' : 'movie';
+    final data = await _getJson('$endpoint/$id/keywords');
+    final rawKeywords = mediaType == 'tv'
+        ? data['results'] as List? ?? []
+        : data['keywords'] as List? ?? [];
+
+    return rawKeywords
+        .where((keyword) {
+          final name = (keyword['name'] ?? '').toString().toLowerCase();
+          return name.isNotEmpty &&
+              !name.contains('anime') &&
+              !name.contains('based on manga');
+        })
+        .map((keyword) => keyword['id']?.toString())
+        .whereType<String>()
+        .toList();
   }
 
   // função que faz o pedido à rede e trata os dados
@@ -193,6 +323,62 @@ class TmdbService {
     ];
 
     return !blockedWords.any(text.contains);
+  }
+
+  List<Movie> _rankRecommendations(
+    List<Movie> items,
+    Movie source,
+    String sourceLanguage,
+  ) {
+    final seen = <String>{};
+    final filtered = <Movie>[];
+
+    for (final item in items) {
+      if (item.sameAs(source)) continue;
+      if (sourceLanguage == 'en' && item.originalLanguage == 'ja') continue;
+      if (sourceLanguage == 'en' && item.mediaType == source.mediaType) {
+        final suspiciousJapanese = item.title.contains(
+          RegExp(r'[\u3040-\u30ff]'),
+        );
+        if (suspiciousJapanese) continue;
+      }
+      if (seen.add(item.favoriteKey)) filtered.add(item);
+    }
+
+    filtered.sort((a, b) {
+      final aScore = _recommendationScore(a, source);
+      final bScore = _recommendationScore(b, source);
+      return bScore.compareTo(aScore);
+    });
+
+    return filtered;
+  }
+
+  double _recommendationScore(Movie item, Movie source) {
+    final sharedGenres = item.genreIds
+        .where((genreId) => source.genreIds.contains(genreId))
+        .length;
+    var score = item.popularity + (sharedGenres * 80);
+
+    final sourceWords = source.title
+        .toLowerCase()
+        .split(RegExp(r'[^a-z0-9]+'))
+        .where((word) => word.length >= 4)
+        .toSet();
+    final itemWords = item.title
+        .toLowerCase()
+        .split(RegExp(r'[^a-z0-9]+'))
+        .where((word) => word.length >= 4)
+        .toSet();
+    score += sourceWords.intersection(itemWords).length * 120;
+
+    return score;
+  }
+
+  List<Movie> _sortByPopularity(List<Movie> items) {
+    final sorted = [...items];
+    sorted.sort((a, b) => b.popularity.compareTo(a.popularity));
+    return sorted;
   }
 }
 

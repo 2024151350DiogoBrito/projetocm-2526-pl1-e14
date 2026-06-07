@@ -9,12 +9,16 @@ class HomeScreen extends StatefulWidget {
   final List<Movie> favoriteMovies;
   final Future<void> Function(Movie) onAddFavorite;
   final Future<void> Function(Movie) onRemoveFavorite;
+  final VoidCallback onOpenNotifications;
+  final int unreadNotifications;
 
   const HomeScreen({
     super.key,
     required this.favoriteMovies,
     required this.onAddFavorite,
     required this.onRemoveFavorite,
+    required this.onOpenNotifications,
+    required this.unreadNotifications,
   });
 
   @override
@@ -63,7 +67,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   bool _isFavorite(Movie movie) {
-    return widget.favoriteMovies.any((m) => m.id == movie.id);
+    return widget.favoriteMovies.any((m) => m.sameAs(movie));
   }
 
   Future<void> _toggleFavorite(Movie movie) async {
@@ -119,16 +123,38 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
     ),
-    actions: [
+    actions: [_notificationButton(), const SizedBox(width: 10)],
+  );
+
+  Widget _notificationButton() => Stack(
+    clipBehavior: Clip.none,
+    children: [
       IconButton(
-        onPressed: () {},
+        onPressed: widget.onOpenNotifications,
         icon: const Icon(Icons.notifications_none_rounded, color: Colors.white),
       ),
-      IconButton(
-        onPressed: () {},
-        icon: const Icon(Icons.person_outline_rounded, color: Colors.white),
-      ),
-      const SizedBox(width: 10),
+      if (widget.unreadNotifications > 0)
+        Positioned(
+          top: 8,
+          right: 8,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+            decoration: BoxDecoration(
+              color: AppTheme.primaryRed,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Text(
+              widget.unreadNotifications > 9
+                  ? '9+'
+                  : widget.unreadNotifications.toString(),
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 9,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ),
+        ),
     ],
   );
 

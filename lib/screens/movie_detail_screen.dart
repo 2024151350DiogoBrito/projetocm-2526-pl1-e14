@@ -35,12 +35,27 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
   @override
   void initState() {
     super.initState();
-    _detailFuture = _service.getMovieDetails(widget.movie.id);
-    _creditsFuture = _service.getMovieCredits(widget.movie.id);
-    _providersFuture = _service.getWatchProviders(widget.movie.id);
-    _imagesFuture = _service.getMovieImages(widget.movie.id);
-    _similarFuture = _service.getSimilarMovies(widget.movie.id);
-    _trailerFuture = _service.getMovieTrailerKey(widget.movie.id);
+    _detailFuture = _service.getMovieDetails(
+      widget.movie.id,
+      mediaType: widget.movie.mediaType,
+    );
+    _creditsFuture = _service.getMovieCredits(
+      widget.movie.id,
+      mediaType: widget.movie.mediaType,
+    );
+    _providersFuture = _service.getWatchProviders(
+      widget.movie.id,
+      mediaType: widget.movie.mediaType,
+    );
+    _imagesFuture = _service.getMovieImages(
+      widget.movie.id,
+      mediaType: widget.movie.mediaType,
+    );
+    _similarFuture = _service.getSmartRecommendations(widget.movie);
+    _trailerFuture = _service.getMovieTrailerKey(
+      widget.movie.id,
+      mediaType: widget.movie.mediaType,
+    );
     _isFavorite = widget.isFavorite;
   }
 
@@ -723,6 +738,7 @@ class MovieDetail {
   final int voteCount;
   final double popularity;
   final String? posterPath;
+  final int numberOfSeasons;
 
   static const String _imageBaseUrl = 'https://image.tmdb.org/t/p';
 
@@ -736,10 +752,15 @@ class MovieDetail {
     required this.voteCount,
     required this.popularity,
     this.posterPath,
+    this.numberOfSeasons = 0,
   });
 
   factory MovieDetail.fromJson(Map<String, dynamic> json) => MovieDetail(
-    runtime: json['runtime'] ?? 0,
+    runtime:
+        json['runtime'] ??
+        ((json['episode_run_time'] as List?)?.isNotEmpty == true
+            ? (json['episode_run_time'] as List).first
+            : 0),
     status: json['status'] ?? '',
     originalLanguage: json['original_language'] ?? '',
     genres: (json['genres'] as List? ?? [])
@@ -750,6 +771,7 @@ class MovieDetail {
     voteCount: json['vote_count'] ?? 0,
     popularity: (json['popularity'] as num? ?? 0).toDouble(),
     posterPath: json['poster_path'],
+    numberOfSeasons: json['number_of_seasons'] ?? 0,
   );
 
   String? get fullPosterPath =>

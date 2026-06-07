@@ -26,13 +26,13 @@ class FavoriteService {
   }
 
   Future<void> addFavorite(Movie movie) async {
-    await _favoritesRef(_currentUid).doc(movie.id.toString()).set({
+    await _favoritesRef(_currentUid).doc(movie.favoriteKey).set({
       ...movie.toMap(),
       'addedAt': FieldValue.serverTimestamp(),
     });
   }
 
   Future<void> removeFavorite(Movie movie) async {
-    await _favoritesRef(_currentUid).doc(movie.id.toString()).delete();
+    await _favoritesRef(_currentUid).doc(movie.favoriteKey).delete();
   }
 }

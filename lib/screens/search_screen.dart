@@ -153,7 +153,7 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   bool _isFavorite(Movie movie) {
-    return widget.favoriteMovies.any((m) => m.id == movie.id);
+    return widget.favoriteMovies.any((m) => m.sameAs(movie));
   }
 
   void _favoriteMovie(Movie movie) {

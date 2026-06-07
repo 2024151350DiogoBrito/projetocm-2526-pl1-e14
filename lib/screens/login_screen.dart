@@ -289,7 +289,7 @@ class _LoginScreenState extends State<LoginScreen> {
     }
 
     if (email.isEmpty || !email.contains('@') || !email.contains('.')) {
-      throw AuthServiceException('Introduz um email vÃ¡lido.');
+      throw AuthServiceException('Introduz um email válido.');
     }
 
     if (password.isEmpty) {

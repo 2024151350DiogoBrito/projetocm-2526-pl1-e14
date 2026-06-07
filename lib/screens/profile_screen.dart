@@ -1,5 +1,11 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:image/image.dart' as img;
+import 'package:image_picker/image_picker.dart';
 import '../theme/app_theme.dart';
 import '../services/auth_service.dart';
 import 'login_screen.dart';
@@ -14,6 +20,7 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   bool _notificationsEnabled = true;
+  Uint8List? _profilePhotoBytes;
 
   Future<void> _showEditProfileDialog() async {
     final user = FirebaseAuth.instance.currentUser;
@@ -25,6 +32,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         final nameController = TextEditingController(
           text: user?.displayName ?? user?.email?.split('@').first ?? '',
         );
+        Uint8List? selectedPhotoBytes;
+        ImageProvider? selectedPhotoPreview;
 
         return StatefulBuilder(
           builder: (context, setDialogState) => AlertDialog(
@@ -49,6 +58,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   label: 'NAME',
                   icon: Icons.person_outline_rounded,
                 ),
+                const SizedBox(height: 14),
+                _photoPickerButton(
+                  preview: selectedPhotoPreview,
+                  label: selectedPhotoBytes == null
+                      ? 'CHOOSE PHOTO'
+                      : 'PHOTO SELECTED',
+                  onTap: () async {
+                    final bytes = await _pickProfilePhoto();
+                    if (bytes == null || !dialogContext.mounted) return;
+
+                    setDialogState(() {
+                      selectedPhotoBytes = bytes;
+                      selectedPhotoPreview = MemoryImage(bytes);
+                    });
+                  },
+                ),
               ],
             ),
             actions: [
@@ -70,7 +95,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                         setDialogState(() => isLoading = true);
                         try {
-                          await AuthService().updateProfile(name: name);
+                          final photoToSave = selectedPhotoBytes;
+                          final photoBase64 = photoToSave == null
+                              ? null
+                              : base64Encode(photoToSave);
+                          if (photoToSave != null) {
+                            _profilePhotoBytes = photoToSave;
+                          }
+
+                          await AuthService().updateProfile(
+                            name: name,
+                            photoBase64: photoBase64,
+                          );
 
                           if (!mounted || !dialogContext.mounted) return;
                           Navigator.pop(dialogContext);
@@ -227,6 +263,84 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
     ),
   );
+
+  Widget _photoPickerButton({
+    required ImageProvider? preview,
+    required String label,
+    required VoidCallback onTap,
+  }) => InkWell(
+    onTap: onTap,
+    borderRadius: BorderRadius.circular(16),
+    child: Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+        color: const Color(0xFF111217),
+      ),
+      child: Row(
+        children: [
+          Container(
+            height: 42,
+            width: 42,
+            decoration: BoxDecoration(
+              color: AppTheme.deepBlack,
+              borderRadius: BorderRadius.circular(12),
+              image: preview == null
+                  ? null
+                  : DecorationImage(image: preview, fit: BoxFit.cover),
+            ),
+            child: preview == null
+                ? const Icon(Icons.image_outlined, color: AppTheme.primaryRed)
+                : null,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 13,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
+          const Icon(
+            Icons.upload_file_rounded,
+            color: AppTheme.primaryRed,
+            size: 22,
+          ),
+        ],
+      ),
+    ),
+  );
+
+  Future<Uint8List?> _pickProfilePhoto() async {
+    final pickedPhoto = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 70,
+      maxWidth: 500,
+      maxHeight: 500,
+    );
+
+    if (pickedPhoto == null) return null;
+
+    final bytes = await pickedPhoto.readAsBytes();
+    final decodedImage = img.decodeImage(bytes);
+    if (decodedImage == null) return bytes;
+
+    final resizedImage = img.copyResize(
+      decodedImage,
+      width: 360,
+      height: 360,
+      maintainAspect: true,
+    );
+
+    return Uint8List.fromList(img.encodeJpg(resizedImage, quality: 65));
+  }
 
   void _showMessage(String message) {
     if (!mounted) return;
@@ -421,13 +535,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 color: const Color(0xFF1C1E26),
                 borderRadius: BorderRadius.circular(35),
               ),
-              child: const Center(
-                child: Icon(
-                  Icons.person_outline_rounded,
-                  size: 60,
-                  color: AppTheme.primaryRed,
-                ),
-              ),
+              clipBehavior: Clip.antiAlias,
+              child: _profilePhotoBytes != null || user == null
+                  ? _avatarImage(_profilePhotoBytes)
+                  : FutureBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+                      future: FirebaseFirestore.instance
+                          .collection('users')
+                          .doc(user.uid)
+                          .get(),
+                      builder: (context, snapshot) {
+                        final photoBase64 =
+                            snapshot.data?.data()?['photoBase64'] as String?;
+
+                        if (photoBase64 == null || photoBase64.isEmpty) {
+                          return _avatarImage(null);
+                        }
+
+                        try {
+                          _profilePhotoBytes = base64Decode(photoBase64);
+                          return _avatarImage(_profilePhotoBytes);
+                        } catch (_) {
+                          return _avatarImage(null);
+                        }
+                      },
+                    ),
             ),
             Positioned(
               bottom: 0,
@@ -471,6 +602,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
       ],
     );
+  }
+
+  Widget _avatarImage(Uint8List? bytes) {
+    if (bytes == null) {
+      return const Center(
+        child: Icon(
+          Icons.person_outline_rounded,
+          size: 60,
+          color: AppTheme.primaryRed,
+        ),
+      );
+    }
+
+    return Image.memory(bytes, fit: BoxFit.cover);
   }
 
   // cabeçalho de secção do menu

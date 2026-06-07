@@ -47,7 +47,10 @@ class AuthService {
     }
   }
 
-  Future<void> updateProfile({required String name}) async {
+  Future<void> updateProfile({
+    required String name,
+    String? photoBase64,
+  }) async {
     final user = _auth.currentUser;
     if (user == null) {
       throw AuthServiceException('Tens de iniciar sessão primeiro.');
@@ -58,14 +61,19 @@ class AuthService {
         await user.updateDisplayName(name);
       }
 
+      final profileData = <String, Object?>{
+        'name': name,
+        'updatedAt': FieldValue.serverTimestamp(),
+      };
+      if (photoBase64 != null) {
+        profileData['photoBase64'] = photoBase64;
+      }
+
       unawaited(
         _firestore
             .collection('users')
             .doc(user.uid)
-            .set({
-              'name': name,
-              'updatedAt': FieldValue.serverTimestamp(),
-            }, SetOptions(merge: true))
+            .set(profileData, SetOptions(merge: true))
             .catchError((Object _) {}),
       );
     } on FirebaseAuthException catch (e) {

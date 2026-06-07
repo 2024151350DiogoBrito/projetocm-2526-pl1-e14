@@ -15,6 +15,226 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   bool _notificationsEnabled = true;
 
+  Future<void> _showEditProfileDialog() async {
+    final user = FirebaseAuth.instance.currentUser;
+    bool isLoading = false;
+
+    await showDialog(
+      context: context,
+      builder: (dialogContext) {
+        final nameController = TextEditingController(
+          text: user?.displayName ?? user?.email?.split('@').first ?? '',
+        );
+
+        return StatefulBuilder(
+          builder: (context, setDialogState) => AlertDialog(
+            backgroundColor: AppTheme.darkCard,
+            surfaceTintColor: Colors.transparent,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(24),
+            ),
+            title: const Text(
+              'EDIT PROFILE',
+              style: TextStyle(
+                color: AppTheme.primaryRed,
+                fontWeight: FontWeight.w900,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _dialogField(
+                  controller: nameController,
+                  label: 'NAME',
+                  icon: Icons.person_outline_rounded,
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: isLoading
+                    ? null
+                    : () => Navigator.pop(dialogContext),
+                child: const Text('CANCEL'),
+              ),
+              ElevatedButton(
+                onPressed: isLoading
+                    ? null
+                    : () async {
+                        final name = nameController.text.trim();
+                        if (name.length < 2) {
+                          _showMessage('Introduz um nome válido.');
+                          return;
+                        }
+
+                        setDialogState(() => isLoading = true);
+                        try {
+                          await AuthService().updateProfile(name: name);
+
+                          if (!mounted || !dialogContext.mounted) return;
+                          Navigator.pop(dialogContext);
+                          setState(() {});
+                          _showMessage('Perfil atualizado.');
+                        } catch (e) {
+                          _showMessage(e.toString());
+                          if (dialogContext.mounted) {
+                            setDialogState(() => isLoading = false);
+                          }
+                        }
+                      },
+                child: isLoading
+                    ? const SizedBox(
+                        height: 18,
+                        width: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Text('SAVE'),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _showChangePasswordDialog() async {
+    bool isLoading = false;
+
+    await showDialog(
+      context: context,
+      builder: (dialogContext) {
+        final currentController = TextEditingController();
+        final newController = TextEditingController();
+        bool currentPasswordVisible = false;
+        bool newPasswordVisible = false;
+
+        return StatefulBuilder(
+          builder: (context, setDialogState) => AlertDialog(
+            backgroundColor: AppTheme.darkCard,
+            surfaceTintColor: Colors.transparent,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(24),
+            ),
+            title: const Text(
+              'CHANGE PASSWORD',
+              style: TextStyle(
+                color: AppTheme.primaryRed,
+                fontWeight: FontWeight.w900,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _dialogField(
+                  controller: currentController,
+                  label: 'CURRENT PASSWORD',
+                  icon: Icons.lock_outline_rounded,
+                  obscureText: !currentPasswordVisible,
+                  passwordVisible: currentPasswordVisible,
+                  onTogglePassword: () {
+                    setDialogState(
+                      () => currentPasswordVisible = !currentPasswordVisible,
+                    );
+                  },
+                ),
+                const SizedBox(height: 14),
+                _dialogField(
+                  controller: newController,
+                  label: 'NEW PASSWORD',
+                  icon: Icons.lock_reset_rounded,
+                  obscureText: !newPasswordVisible,
+                  passwordVisible: newPasswordVisible,
+                  onTogglePassword: () {
+                    setDialogState(
+                      () => newPasswordVisible = !newPasswordVisible,
+                    );
+                  },
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: isLoading
+                    ? null
+                    : () => Navigator.pop(dialogContext),
+                child: const Text('CANCEL'),
+              ),
+              ElevatedButton(
+                onPressed: isLoading
+                    ? null
+                    : () async {
+                        setDialogState(() => isLoading = true);
+                        try {
+                          await AuthService().changePassword(
+                            currentPassword: currentController.text.trim(),
+                            newPassword: newController.text.trim(),
+                          );
+
+                          if (!mounted || !dialogContext.mounted) return;
+                          Navigator.pop(dialogContext);
+                          _showMessage('Password alterada.');
+                        } catch (e) {
+                          _showMessage(e.toString());
+                          if (dialogContext.mounted) {
+                            setDialogState(() => isLoading = false);
+                          }
+                        }
+                      },
+                child: isLoading
+                    ? const SizedBox(
+                        height: 18,
+                        width: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Text('SAVE'),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _dialogField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    bool obscureText = false,
+    bool? passwordVisible,
+    VoidCallback? onTogglePassword,
+  }) => TextField(
+    controller: controller,
+    obscureText: obscureText,
+    style: const TextStyle(color: Colors.white),
+    decoration: InputDecoration(
+      labelText: label,
+      prefixIcon: Icon(icon, color: AppTheme.primaryRed),
+      suffixIcon: onTogglePassword == null || passwordVisible == null
+          ? null
+          : IconButton(
+              tooltip: passwordVisible
+                  ? 'Esconder password'
+                  : 'Mostrar password',
+              onPressed: onTogglePassword,
+              icon: Icon(
+                passwordVisible
+                    ? Icons.visibility_off_outlined
+                    : Icons.visibility_outlined,
+                color: const Color(0xFF7C7D84),
+              ),
+            ),
+    ),
+  );
+
+  void _showMessage(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: AppTheme.primaryRed),
+    );
+  }
+
   // mostra a janela de créditos da equipa
   void _showCreditsDialog() => showDialog(
     context: context,
@@ -124,6 +344,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             title: "SECURITY",
             subtitle: "CHANGE AND RECOVER PASSWORD",
             hasChevron: true,
+            onTap: _showChangePasswordDialog,
           ),
 
           const SizedBox(height: 30),
@@ -137,13 +358,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
             subtitle: "PROJECT AND TEAM INFORMATION",
             hasChevron: true,
             onTap: _showCreditsDialog,
-          ),
-
-          _buildProfileTile(
-            icon: Icons.shield_outlined,
-            title: "PRIVACY",
-            subtitle: "TERMS AND CONDITIONS OF USE",
-            hasChevron: true,
           ),
 
           const SizedBox(height: 40),
@@ -193,66 +407,71 @@ class _ProfileScreenState extends State<ProfileScreen> {
   );
 
   // zona da foto e dados do utilizador
-  Widget _buildAvatarSection() => Column(
-    children: [
-      Stack(
-        children: [
-          Container(
-            height: 120,
-            width: 120,
-            decoration: BoxDecoration(
-              color: const Color(0xFF1C1E26),
-              borderRadius: BorderRadius.circular(35),
-            ),
-            child: const Center(
-              child: Icon(
-                Icons.person_outline_rounded,
-                size: 60,
-                color: AppTheme.primaryRed,
-              ),
-            ),
-          ),
-          Positioned(
-            bottom: 0,
-            right: 0,
-            child: Container(
-              padding: const EdgeInsets.all(8),
+  Widget _buildAvatarSection() {
+    final user = FirebaseAuth.instance.currentUser;
+
+    return Column(
+      children: [
+        Stack(
+          children: [
+            Container(
+              height: 120,
+              width: 120,
               decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
+                color: const Color(0xFF1C1E26),
+                borderRadius: BorderRadius.circular(35),
               ),
-              child: const Icon(
-                Icons.edit_outlined,
-                size: 18,
-                color: Colors.black,
+              child: const Center(
+                child: Icon(
+                  Icons.person_outline_rounded,
+                  size: 60,
+                  color: AppTheme.primaryRed,
+                ),
               ),
             ),
+            Positioned(
+              bottom: 0,
+              right: 0,
+              child: GestureDetector(
+                onTap: _showEditProfileDialog,
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    Icons.edit_outlined,
+                    size: 18,
+                    color: Colors.black,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 20),
+        Text(
+          (user?.displayName ?? user?.email?.split('@').first ?? "USER")
+              .toUpperCase(),
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 24,
+            fontWeight: FontWeight.w900,
+            fontStyle: FontStyle.italic,
           ),
-        ],
-      ),
-      const SizedBox(height: 20),
-      Text(
-        (FirebaseAuth.instance.currentUser?.displayName ??
-                FirebaseAuth.instance.currentUser?.email?.split('@').first ??
-                "USER")
-            .toUpperCase(),
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 24,
-          fontWeight: FontWeight.w900,
-          fontStyle: FontStyle.italic,
         ),
-      ),
-      Text(
-        FirebaseAuth.instance.currentUser?.email ?? "NO EMAIL",
-        style: const TextStyle(
-          color: Colors.white24,
-          fontSize: 12,
-          fontWeight: FontWeight.bold,
+        Text(
+          user?.email ?? "NO EMAIL",
+          style: const TextStyle(
+            color: Colors.white24,
+            fontSize: 12,
+            fontWeight: FontWeight.bold,
+          ),
         ),
-      ),
-    ],
-  );
+      ],
+    );
+  }
 
   // cabeçalho de secção do menu
   Widget _buildSectionHeader(String title) => Align(

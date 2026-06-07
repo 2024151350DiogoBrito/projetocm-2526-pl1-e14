@@ -1,4 +1,3 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import '../models/movie.dart';
 import '../services/tmdb_service.dart';
@@ -48,6 +47,30 @@ class _PersonProfileScreenState extends State<PersonProfileScreen> {
     ),
   );
 
+  Widget _networkImage(
+    String url, {
+    double? width,
+    double? height,
+    BoxFit fit = BoxFit.cover,
+  }) => Image.network(
+    url,
+    width: width,
+    height: height,
+    fit: fit,
+    loadingBuilder: (context, child, progress) => progress == null
+        ? child
+        : const Center(
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              color: AppTheme.primaryRed,
+            ),
+          ),
+    errorBuilder: (_, _, _) => Container(
+      color: Colors.black26,
+      child: const Icon(Icons.broken_image_outlined, color: Colors.white30),
+    ),
+  );
+
   Widget _buildHeader() => FutureBuilder<PersonDetail>(
     future: _personFuture,
     builder: (context, snapshot) {
@@ -84,10 +107,7 @@ class _PersonProfileScreenState extends State<PersonProfileScreen> {
                             color: AppTheme.darkCard,
                             child: const Icon(Icons.person, size: 44),
                           )
-                        : CachedNetworkImage(
-                            imageUrl: person!.profileUrl!,
-                            fit: BoxFit.cover,
-                          ),
+                        : _networkImage(person!.profileUrl!),
                   ),
                 ),
                 const SizedBox(width: 18),
@@ -187,11 +207,10 @@ class _PersonProfileScreenState extends State<PersonProfileScreen> {
                         children: [
                           ClipRRect(
                             borderRadius: BorderRadius.circular(14),
-                            child: CachedNetworkImage(
-                              imageUrl: movie.fullPosterPath,
+                            child: _networkImage(
+                              movie.fullPosterPath,
                               height: 170,
                               width: 120,
-                              fit: BoxFit.cover,
                             ),
                           ),
                           const SizedBox(height: 8),

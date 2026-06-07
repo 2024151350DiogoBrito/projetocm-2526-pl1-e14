@@ -21,6 +21,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordController = TextEditingController();
 
   bool _isLoading = false;
+  bool _passwordVisible = false;
 
   // desenha a interface principal
   @override
@@ -183,12 +184,29 @@ class _LoginScreenState extends State<LoginScreen> {
     ),
     child: TextField(
       controller: controller,
-      obscureText: isPass,
+      obscureText: isPass && !_passwordVisible,
       style: const TextStyle(color: Colors.white, fontSize: 14),
       decoration: InputDecoration(
         hintText: hint,
         hintStyle: const TextStyle(color: Color(0xFF37383D)),
         prefixIcon: Icon(icon, color: const Color(0xFF37383D), size: 22),
+        suffixIcon: isPass
+            ? IconButton(
+                tooltip: _passwordVisible
+                    ? 'Esconder password'
+                    : 'Mostrar password',
+                onPressed: () {
+                  setState(() => _passwordVisible = !_passwordVisible);
+                },
+                icon: Icon(
+                  _passwordVisible
+                      ? Icons.visibility_off_outlined
+                      : Icons.visibility_outlined,
+                  color: const Color(0xFF5A5B63),
+                  size: 22,
+                ),
+              )
+            : null,
         border: InputBorder.none,
         contentPadding: const EdgeInsets.symmetric(vertical: 18),
       ),

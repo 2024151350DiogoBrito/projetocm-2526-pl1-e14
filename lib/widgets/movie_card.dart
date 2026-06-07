@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import '../models/movie.dart';
 import '../theme/app_theme.dart';
 
@@ -47,18 +46,20 @@ class MovieCard extends StatelessWidget {
   );
 
   // carregamento da imagem da API
-  Widget _buildPoster() => CachedNetworkImage(
-    imageUrl: movie.fullPosterPath,
+  Widget _buildPoster() => Image.network(
+    movie.fullPosterPath,
     fit: BoxFit.cover,
     height: double.infinity,
     width: double.infinity,
-    placeholder: (_, _) => const Center(
-      child: CircularProgressIndicator(
-        strokeWidth: 2,
-        color: AppTheme.primaryRed,
-      ),
-    ),
-    errorWidget: (_, _, _) =>
+    loadingBuilder: (context, child, loadingProgress) => loadingProgress == null
+        ? child
+        : const Center(
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              color: AppTheme.primaryRed,
+            ),
+          ),
+    errorBuilder: (_, _, _) =>
         const Icon(Icons.broken_image, color: Colors.grey),
   );
 

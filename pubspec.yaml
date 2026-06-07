@@ -39,8 +39,6 @@ dependencies:
   cupertino_icons: ^1.0.6
   font_awesome_flutter: ^10.6.0
   google_fonts: ^6.1.0
-  cached_network_image: ^3.3.0
-  flutter_blurhash: ^0.8.2
   http: ^1.2.0
 
   # Gestão de Estado e Navegação

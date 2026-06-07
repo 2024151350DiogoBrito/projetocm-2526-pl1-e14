@@ -1,4 +1,3 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import '../models/movie.dart';
 import '../services/tmdb_service.dart';
@@ -93,15 +92,36 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
     ),
   );
 
+  Widget _networkImage(
+    String url, {
+    double? width,
+    double? height,
+    BoxFit fit = BoxFit.cover,
+  }) => Image.network(
+    url,
+    width: width,
+    height: height,
+    fit: fit,
+    loadingBuilder: (context, child, progress) => progress == null
+        ? child
+        : const Center(
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              color: AppTheme.primaryRed,
+            ),
+          ),
+    errorBuilder: (_, _, _) => Container(
+      color: Colors.black26,
+      child: const Icon(Icons.broken_image_outlined, color: Colors.white30),
+    ),
+  );
+
   Widget _buildHero(MovieDetail? detail) => SizedBox(
     height: 410,
     child: Stack(
       fit: StackFit.expand,
       children: [
-        CachedNetworkImage(
-          imageUrl: widget.movie.fullBackdropPath,
-          fit: BoxFit.cover,
-        ),
+        _networkImage(widget.movie.fullBackdropPath),
         DecoratedBox(
           decoration: BoxDecoration(
             gradient: LinearGradient(
@@ -129,11 +149,10 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
             children: [
               ClipRRect(
                 borderRadius: BorderRadius.circular(14),
-                child: CachedNetworkImage(
-                  imageUrl: widget.movie.fullPosterPath,
+                child: _networkImage(
+                  widget.movie.fullPosterPath,
                   width: 112,
                   height: 168,
-                  fit: BoxFit.cover,
                 ),
               ),
               const SizedBox(width: 14),
@@ -233,11 +252,10 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                   children: [
                     ClipRRect(
                       borderRadius: BorderRadius.circular(12),
-                      child: CachedNetworkImage(
-                        imageUrl: provider.logoUrl,
+                      child: _networkImage(
+                        provider.logoUrl,
                         width: 54,
                         height: 54,
-                        fit: BoxFit.cover,
                       ),
                     ),
                     const SizedBox(height: 5),
@@ -297,11 +315,10 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                     children: [
                       ClipRRect(
                         borderRadius: BorderRadius.circular(10),
-                        child: CachedNetworkImage(
-                          imageUrl: actor.profileUrl!,
+                        child: _networkImage(
+                          actor.profileUrl!,
                           width: 88,
                           height: 92,
-                          fit: BoxFit.cover,
                         ),
                       ),
                       const SizedBox(height: 6),
@@ -400,10 +417,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
               margin: const EdgeInsets.only(right: 14),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(12),
-                child: CachedNetworkImage(
-                  imageUrl: images[index],
-                  fit: BoxFit.cover,
-                ),
+                child: _networkImage(images[index]),
               ),
             ),
           ),
@@ -446,10 +460,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                   margin: const EdgeInsets.only(right: 14),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(12),
-                    child: CachedNetworkImage(
-                      imageUrl: movie.fullPosterPath,
-                      fit: BoxFit.cover,
-                    ),
+                    child: _networkImage(movie.fullPosterPath),
                   ),
                 ),
               );
@@ -584,10 +595,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
             height: 52,
             child: crew.profileUrl == null
                 ? Container(color: Colors.black26)
-                : CachedNetworkImage(
-                    imageUrl: crew.profileUrl!,
-                    fit: BoxFit.cover,
-                  ),
+                : _networkImage(crew.profileUrl!),
           ),
         ),
         const SizedBox(width: 14),

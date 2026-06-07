@@ -1,5 +1,7 @@
-import 'package:firebase_auth/firebase_auth.dart';
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class AuthServiceException implements Exception {
   final String message;
@@ -45,6 +47,61 @@ class AuthService {
     }
   }
 
+  Future<void> updateProfile({required String name}) async {
+    final user = _auth.currentUser;
+    if (user == null) {
+      throw AuthServiceException('Tens de iniciar sessão primeiro.');
+    }
+
+    try {
+      if (user.displayName != name) {
+        await user.updateDisplayName(name);
+      }
+
+      unawaited(
+        _firestore
+            .collection('users')
+            .doc(user.uid)
+            .set({
+              'name': name,
+              'updatedAt': FieldValue.serverTimestamp(),
+            }, SetOptions(merge: true))
+            .catchError((Object _) {}),
+      );
+    } on FirebaseAuthException catch (e) {
+      throw AuthServiceException(_messageForAuthError(e));
+    }
+  }
+
+  Future<void> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    final user = _auth.currentUser;
+    final email = user?.email;
+
+    if (user == null || email == null) {
+      throw AuthServiceException('Tens de iniciar sessão primeiro.');
+    }
+
+    if (newPassword.length < 6) {
+      throw AuthServiceException(
+        'A nova palavra-passe deve ter pelo menos 6 caracteres.',
+      );
+    }
+
+    try {
+      final credential = EmailAuthProvider.credential(
+        email: email,
+        password: currentPassword,
+      );
+      await user.reauthenticateWithCredential(credential);
+      await user.updatePassword(newPassword);
+    } on FirebaseAuthException catch (e) {
+      throw AuthServiceException(_messageForAuthError(e));
+    }
+  }
+
   Future<void> logout() async {
     await _auth.signOut();
   }
@@ -67,6 +124,8 @@ class AuthService {
         return 'Foram feitas demasiadas tentativas. Tenta novamente mais tarde.';
       case 'network-request-failed':
         return 'Sem ligação à internet. Verifica a tua rede.';
+      case 'requires-recent-login':
+        return 'Por segurança, volta a iniciar sessão antes de alterar a password.';
       default:
         return 'Não foi possível concluir a autenticação.';
     }

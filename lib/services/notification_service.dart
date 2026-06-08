@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/app_notification.dart';
@@ -46,6 +48,47 @@ class NotificationService {
 
     for (final doc in snapshot.docs) {
       batch.update(doc.reference, {'read': true});
+    }
+
+    await batch.commit();
+  }
+
+  AppNotification createDemoNotification() {
+    final uid = _currentUid;
+    final timestamp = DateTime.now().millisecondsSinceEpoch;
+    final isRelease = timestamp.isEven;
+    final notification = AppNotification(
+      id: 'demo_$timestamp',
+      type: isRelease ? 'release' : 'season',
+      title: isRelease
+          ? 'Demonstração: filme estreou'
+          : 'Demonstração: nova temporada',
+      message: isRelease
+          ? 'Exemplo de aviso quando um filme guardado nos Saved estreia.'
+          : 'Exemplo de aviso quando uma série guardada ganha nova temporada.',
+      read: false,
+      createdAt: DateTime.now(),
+    );
+
+    unawaited(
+      _createNotification(
+        uid: uid,
+        key: notification.id,
+        type: notification.type,
+        title: notification.title,
+        message: notification.message,
+      ).catchError((_) {}),
+    );
+
+    return notification;
+  }
+
+  Future<void> clearNotifications() async {
+    final snapshot = await _notificationsRef(_currentUid).get();
+    final batch = _firestore.batch();
+
+    for (final doc in snapshot.docs) {
+      batch.delete(doc.reference);
     }
 
     await batch.commit();
@@ -155,7 +198,7 @@ class NotificationService {
       'title': title,
       'message': message,
       'read': false,
-      'createdAt': FieldValue.serverTimestamp(),
+      'createdAt': Timestamp.now(),
     }, SetOptions(merge: true));
   }
 

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import '../models/app_notification.dart';
 import '../services/notification_service.dart';
@@ -13,6 +15,9 @@ class NotificationsScreen extends StatefulWidget {
 class _NotificationsScreenState extends State<NotificationsScreen> {
   final NotificationService _service = NotificationService();
   late Future<List<AppNotification>> _notificationsFuture;
+  final List<AppNotification> _localNotifications = [];
+  bool _isCreatingDemo = false;
+  bool _isClearing = false;
 
   @override
   void initState() {
@@ -21,9 +26,45 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   }
 
   Future<List<AppNotification>> _loadNotifications() async {
-    final notifications = await _service.getNotifications();
-    await _service.markAllAsRead();
+    final notifications = await _service.getNotifications().timeout(
+      const Duration(seconds: 25),
+    );
+    unawaited(_service.markAllAsRead().catchError((_) {}));
     return notifications;
+  }
+
+  Future<void> _createDemoNotification() async {
+    if (_isCreatingDemo) return;
+    setState(() {
+      _isCreatingDemo = true;
+      _localNotifications.insert(0, _service.createDemoNotification());
+    });
+
+    await Future<void>.delayed(const Duration(milliseconds: 250));
+    if (mounted) setState(() => _isCreatingDemo = false);
+  }
+
+  Future<void> _clearNotifications() async {
+    if (_isClearing) return;
+    setState(() {
+      _isClearing = true;
+      _localNotifications.clear();
+      _notificationsFuture = Future.value([]);
+    });
+
+    try {
+      await _service.clearNotifications().timeout(const Duration(seconds: 15));
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Não foi possível limpar as notificações.'),
+          backgroundColor: AppTheme.primaryRed,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isClearing = false);
+    }
   }
 
   @override
@@ -38,6 +79,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             child: FutureBuilder<List<AppNotification>>(
               future: _notificationsFuture,
               builder: (context, snapshot) {
+                if (snapshot.hasError) {
+                  return _errorState();
+                }
+
                 if (!snapshot.hasData) {
                   return const Center(
                     child: CircularProgressIndicator(
@@ -46,7 +91,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   );
                 }
 
-                final notifications = snapshot.data!;
+                final notifications = _mergeNotifications(snapshot.data!);
                 if (notifications.isEmpty) {
                   return const Center(
                     child: Text(
@@ -71,7 +116,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   );
 
   Widget _header(BuildContext context) => Padding(
-    padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
+    padding: const EdgeInsets.fromLTRB(20, 18, 14, 18),
     child: Row(
       children: [
         GestureDetector(
@@ -86,17 +131,95 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             child: const Icon(Icons.arrow_back_rounded, color: Colors.white),
           ),
         ),
-        const SizedBox(width: 16),
-        const Text(
-          'NOTIFICATIONS',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 24,
-            fontWeight: FontWeight.w900,
-            fontStyle: FontStyle.italic,
+        const SizedBox(width: 14),
+        const Expanded(
+          child: Text(
+            'NOTIFICATIONS',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 22,
+              fontWeight: FontWeight.w900,
+              fontStyle: FontStyle.italic,
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        TextButton(
+          onPressed: _isCreatingDemo ? null : _createDemoNotification,
+          style: TextButton.styleFrom(
+            foregroundColor: AppTheme.primaryRed,
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+            minimumSize: Size.zero,
+            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          ),
+          child: const Text(
+            'DEMO',
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 0.5,
+            ),
+          ),
+        ),
+        IconButton(
+          tooltip: 'Limpar notificações',
+          onPressed: _isClearing ? null : _clearNotifications,
+          padding: EdgeInsets.zero,
+          constraints: const BoxConstraints.tightFor(width: 34, height: 34),
+          icon: const Icon(
+            Icons.delete_outline_rounded,
+            color: Colors.white54,
+            size: 19,
           ),
         ),
       ],
+    ),
+  );
+
+  List<AppNotification> _mergeNotifications(List<AppNotification> remote) {
+    final byId = <String, AppNotification>{};
+    for (final notification in remote) {
+      byId[notification.id] = notification;
+    }
+    for (final notification in _localNotifications.reversed) {
+      byId[notification.id] = notification;
+    }
+
+    final merged = byId.values.toList();
+    merged.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    return merged;
+  }
+
+  Widget _errorState() => Center(
+    child: Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 30),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(
+            Icons.notifications_off_outlined,
+            color: AppTheme.primaryRed,
+            size: 36,
+          ),
+          const SizedBox(height: 14),
+          const Text(
+            'Não foi possível carregar as notificações.',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Colors.white54),
+          ),
+          const SizedBox(height: 12),
+          TextButton(
+            onPressed: () {
+              setState(() {
+                _notificationsFuture = _loadNotifications();
+              });
+            },
+            child: const Text('TENTAR NOVAMENTE'),
+          ),
+        ],
+      ),
     ),
   );
 

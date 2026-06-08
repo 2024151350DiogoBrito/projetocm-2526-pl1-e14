@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../models/movie.dart';
 import '../services/tmdb_service.dart';
 import '../theme/app_theme.dart';
@@ -219,14 +220,11 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
     child: Row(
       children: [
         Expanded(
-          child: FutureBuilder<String?>(
-            future: _trailerFuture,
-            builder: (context, snapshot) => _largeButton(
-              icon: Icons.play_arrow_rounded,
-              label: 'TRAILER',
-              isPrimary: true,
-              onTap: () => _showTrailer(snapshot.data),
-            ),
+          child: _largeButton(
+            icon: Icons.play_arrow_rounded,
+            label: 'TRAILER',
+            isPrimary: true,
+            onTap: _showTrailer,
           ),
         ),
         const SizedBox(width: 12),
@@ -716,13 +714,44 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
     ),
   );
 
-  void _showTrailer(String? key) {
-    final message = key == null
-        ? 'Trailer indisponível.'
-        : 'YouTube: https://www.youtube.com/watch?v=$key';
+  Future<void> _showTrailer() async {
+    final key = await _trailerFuture;
+    if (!mounted) return;
+
+    if (key == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Trailer indisponível.'),
+          backgroundColor: AppTheme.primaryRed,
+        ),
+      );
+      return;
+    }
+
+    final url = Uri.parse('https://www.youtube.com/watch?v=$key');
+    final opened = await _openTrailerUrl(url);
+    if (opened || !mounted) return;
+
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: AppTheme.primaryRed),
+      const SnackBar(
+        content: Text('Não foi possível abrir o trailer.'),
+        backgroundColor: AppTheme.primaryRed,
+      ),
     );
+  }
+
+  Future<bool> _openTrailerUrl(Uri url) async {
+    try {
+      if (await launchUrl(url, mode: LaunchMode.platformDefault)) {
+        return true;
+      }
+    } catch (_) {}
+
+    try {
+      return await launchUrl(url, mode: LaunchMode.externalApplication);
+    } catch (_) {
+      return false;
+    }
   }
 
   String _year(String date) => date.length >= 4 ? date.substring(0, 4) : 'N/A';

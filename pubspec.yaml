@@ -42,6 +42,7 @@ dependencies:
   http: ^1.2.0
   image: ^4.8.0
   image_picker: ^1.2.0
+  url_launcher: ^6.3.1
 
   # Gestão de Estado e Navegação
   provider: ^6.1.1

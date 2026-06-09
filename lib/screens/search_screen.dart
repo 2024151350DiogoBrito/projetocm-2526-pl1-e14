@@ -237,7 +237,7 @@ class _SearchScreenState extends State<SearchScreen> {
                   style: const TextStyle(color: Colors.white),
                   onSubmitted: _searchMovies,
                   decoration: const InputDecoration(
-                    hintText: 'Movies, series, actors...',
+                    hintText: 'Movies, series, ...',
                     hintStyle: TextStyle(color: Colors.white24, fontSize: 14),
                     isCollapsed: true,
                     filled: false,

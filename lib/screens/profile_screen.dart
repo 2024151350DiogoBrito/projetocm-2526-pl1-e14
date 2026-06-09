@@ -8,6 +8,7 @@ import 'package:image/image.dart' as img;
 import 'package:image_picker/image_picker.dart';
 import '../theme/app_theme.dart';
 import '../services/auth_service.dart';
+import '../services/notification_service.dart';
 import 'login_screen.dart';
 
 // ecrã de perfil
@@ -21,6 +22,37 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   bool _notificationsEnabled = true;
   Uint8List? _profilePhotoBytes;
+  final NotificationService _notificationService = NotificationService();
+
+  // carrega as preferências do perfil
+  @override
+  void initState() {
+    super.initState();
+    _loadNotificationPreference();
+  }
+
+  // carrega a preferência das notificações
+  Future<void> _loadNotificationPreference() async {
+    try {
+      final enabled = await _notificationService.notificationsEnabled();
+      if (!mounted) return;
+      setState(() => _notificationsEnabled = enabled);
+    } catch (_) {}
+  }
+
+  // altera a preferência das notificações
+  Future<void> _setNotificationsEnabled(bool enabled) async {
+    final previousValue = _notificationsEnabled;
+    setState(() => _notificationsEnabled = enabled);
+
+    try {
+      await _notificationService.setNotificationsEnabled(enabled);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _notificationsEnabled = previousValue);
+      _showMessage('Não foi possível atualizar as notificações.');
+    }
+  }
 
   // mostra a janela para editar o perfil
   Future<void> _showEditProfileDialog() async {
@@ -453,7 +485,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             subtitle: "ALERTS FOR NEW MOVIES AND PREMIERES",
             trailing: Switch(
               value: _notificationsEnabled,
-              onChanged: (v) => setState(() => _notificationsEnabled = v),
+              onChanged: _setNotificationsEnabled,
               activeThumbColor: Colors.white,
               activeTrackColor: AppTheme.primaryRed,
             ),

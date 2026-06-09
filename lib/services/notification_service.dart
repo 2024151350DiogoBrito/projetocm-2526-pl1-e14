@@ -28,6 +28,23 @@ class NotificationService {
   CollectionReference<Map<String, dynamic>> _favoritesRef(String uid) =>
       _firestore.collection('users').doc(uid).collection('favorites');
 
+  // verifica se as notificações estão ativas
+  Future<bool> notificationsEnabled() async {
+    final snapshot = await _firestore
+        .collection('users')
+        .doc(_currentUid)
+        .get();
+    return snapshot.data()?['notificationsEnabled'] != false;
+  }
+
+  // atualiza a preferência das notificações
+  Future<void> setNotificationsEnabled(bool enabled) async {
+    await _firestore.collection('users').doc(_currentUid).set({
+      'notificationsEnabled': enabled,
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+  }
+
   // vai buscar as notificações guardadas
   Future<List<AppNotification>> getNotifications() async {
     final snapshot = await _notificationsRef(
@@ -127,6 +144,8 @@ class NotificationService {
   // verifica novidades nos favoritos guardados
   Future<void> checkSavedItems() async {
     final uid = _currentUid;
+    if (!await notificationsEnabled()) return;
+
     final favorites = await _favoritesRef(uid).get();
 
     for (final doc in favorites.docs) {

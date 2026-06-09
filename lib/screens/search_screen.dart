@@ -95,6 +95,7 @@ class _SearchScreenState extends State<SearchScreen> {
     _loadTrendingSearches();
   }
 
+  // carrega as pesquisas em tendência
   Future<void> _loadTrendingSearches() async {
     try {
       final movies = await _service.getTrendingMovies();
@@ -109,6 +110,7 @@ class _SearchScreenState extends State<SearchScreen> {
     }
   }
 
+  // pesquisa filmes e séries
   Future<void> _searchMovies(String text) async {
     final query = text.trim();
 
@@ -141,6 +143,7 @@ class _SearchScreenState extends State<SearchScreen> {
     }
   }
 
+  // limpa a pesquisa atual
   void _clearSearch() {
     FocusScope.of(context).unfocus();
     _controller.clear();
@@ -152,10 +155,12 @@ class _SearchScreenState extends State<SearchScreen> {
     });
   }
 
+  // verifica se está nos favoritos
   bool _isFavorite(Movie movie) {
     return widget.favoriteMovies.any((m) => m.sameAs(movie));
   }
 
+  // adiciona aos favoritos
   void _favoriteMovie(Movie movie) {
     widget.onAddFavorite(movie);
 
@@ -167,6 +172,7 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 
+  // abre a página do género
   void _openGenre(_GenreItem genre) {
     Navigator.push(
       context,
@@ -188,6 +194,7 @@ class _SearchScreenState extends State<SearchScreen> {
     super.dispose();
   }
 
+  // constrói a página de pesquisa
   @override
   Widget build(BuildContext context) => Scaffold(
     backgroundColor: AppTheme.deepBlack,
@@ -209,6 +216,7 @@ class _SearchScreenState extends State<SearchScreen> {
     ),
   );
 
+  // constrói a barra de pesquisa
   Widget _buildSearchBar() => Row(
     children: [
       Expanded(
@@ -255,6 +263,7 @@ class _SearchScreenState extends State<SearchScreen> {
     ],
   );
 
+  // constrói o botão de limpar pesquisa
   Widget _searchActionBtn() => Container(
     height: 55,
     width: 55,
@@ -266,6 +275,7 @@ class _SearchScreenState extends State<SearchScreen> {
     child: const Icon(Icons.close_rounded, color: Colors.white),
   );
 
+  // constrói as pesquisas recentes
   Widget _buildRecent() {
     if (widget.recentSearches.isEmpty) {
       return const SizedBox.shrink();
@@ -305,6 +315,7 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 
+  // constrói uma pesquisa recente
   Widget _recentChip(String text) => GestureDetector(
     onTap: () {
       _controller.text = text;
@@ -328,11 +339,13 @@ class _SearchScreenState extends State<SearchScreen> {
     ),
   );
 
+  // constrói o conteúdo inicial
   Widget _buildDiscoverContent() => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [_buildTrending(), const SizedBox(height: 36), _buildGenreGrid()],
   );
 
+  // constrói a lista de tendências
   Widget _buildTrending() => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
@@ -366,6 +379,7 @@ class _SearchScreenState extends State<SearchScreen> {
     ],
   );
 
+  // constrói uma linha de tendência
   Widget _trendingRow(int index, String title) => GestureDetector(
     onTap: () {
       _controller.text = title;
@@ -402,6 +416,7 @@ class _SearchScreenState extends State<SearchScreen> {
     ),
   );
 
+  // constrói a grelha de géneros
   Widget _buildGenreGrid() => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
@@ -438,6 +453,7 @@ class _SearchScreenState extends State<SearchScreen> {
     ],
   );
 
+  // constrói um cartão de género
   Widget _genreCard(_GenreItem genre) => GestureDetector(
     onTap: () => _openGenre(genre),
     child: Container(
@@ -466,6 +482,7 @@ class _SearchScreenState extends State<SearchScreen> {
     ),
   );
 
+  // constrói os resultados da pesquisa
   Widget _buildSearchContent() {
     if (_isLoading) {
       return const SizedBox(
@@ -532,6 +549,7 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 }
 
+// dados de um género
 class _GenreItem {
   final int id;
   final String name;
@@ -544,6 +562,7 @@ class _GenreItem {
   });
 }
 
+// cartão de um resultado da pesquisa
 class _MovieSearchItem extends StatelessWidget {
   final Movie movie;
   final bool isFavorite;
@@ -557,6 +576,7 @@ class _MovieSearchItem extends StatelessWidget {
     required this.onFavorite,
   });
 
+  // constrói o cartão do filme
   @override
   Widget build(BuildContext context) => GestureDetector(
     onTap: onTap,

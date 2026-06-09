@@ -4,6 +4,7 @@ import '../services/tmdb_service.dart';
 import '../theme/app_theme.dart';
 import 'movie_detail_screen.dart';
 
+// ecrã dos filmes de um género
 class GenreMoviesScreen extends StatefulWidget {
   final int genreId;
   final String genreName;
@@ -28,12 +29,14 @@ class _GenreMoviesScreenState extends State<GenreMoviesScreen> {
   final TmdbService _service = TmdbService();
   late Future<List<Movie>> _moviesFuture;
 
+  // carrega os filmes do género
   @override
   void initState() {
     super.initState();
     _moviesFuture = _service.getMoviesByGenre(widget.genreId);
   }
 
+  // constrói a página do género
   @override
   Widget build(BuildContext context) => Scaffold(
     backgroundColor: AppTheme.deepBlack,
@@ -101,6 +104,7 @@ class _GenreMoviesScreenState extends State<GenreMoviesScreen> {
     ),
   );
 
+  // constrói o cabeçalho
   Widget _buildHeader(BuildContext context) => Row(
     children: [
       GestureDetector(
@@ -132,11 +136,13 @@ class _GenreMoviesScreenState extends State<GenreMoviesScreen> {
     ],
   );
 
+  // verifica se está nos favoritos
   bool _isFavorite(Movie movie) {
     return widget.favoriteMovies.any((m) => m.sameAs(movie));
   }
 }
 
+// cartão de um filme do género
 class _GenreMovieCard extends StatelessWidget {
   final Movie movie;
   final bool isFavorite;
@@ -150,6 +156,7 @@ class _GenreMovieCard extends StatelessWidget {
     required this.onRemoveFavorite,
   });
 
+  // constrói o cartão do filme
   @override
   Widget build(BuildContext context) => GestureDetector(
     onTap: () => Navigator.push(

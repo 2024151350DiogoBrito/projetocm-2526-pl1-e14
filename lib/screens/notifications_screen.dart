@@ -5,6 +5,7 @@ import '../models/app_notification.dart';
 import '../services/notification_service.dart';
 import '../theme/app_theme.dart';
 
+// ecrã de notificações
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
 
@@ -19,12 +20,14 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   bool _isCreatingDemo = false;
   bool _isClearing = false;
 
+  // carrega as notificações ao abrir
   @override
   void initState() {
     super.initState();
     _notificationsFuture = _loadNotifications();
   }
 
+  // vai buscar as notificações
   Future<List<AppNotification>> _loadNotifications() async {
     final notifications = await _service.getNotifications().timeout(
       const Duration(seconds: 25),
@@ -33,6 +36,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     return notifications;
   }
 
+  // cria uma notificação de demonstração
   Future<void> _createDemoNotification() async {
     if (_isCreatingDemo) return;
     setState(() {
@@ -44,6 +48,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     if (mounted) setState(() => _isCreatingDemo = false);
   }
 
+  // limpa as notificações
   Future<void> _clearNotifications() async {
     if (_isClearing) return;
     setState(() {
@@ -67,6 +72,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     }
   }
 
+  // constrói a página de notificações
   @override
   Widget build(BuildContext context) => Scaffold(
     backgroundColor: AppTheme.deepBlack,
@@ -115,6 +121,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     ),
   );
 
+  // constrói o cabeçalho
   Widget _header(BuildContext context) => Padding(
     padding: const EdgeInsets.fromLTRB(20, 18, 14, 18),
     child: Row(
@@ -178,6 +185,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     ),
   );
 
+  // junta notificações locais e remotas
   List<AppNotification> _mergeNotifications(List<AppNotification> remote) {
     final byId = <String, AppNotification>{};
     for (final notification in remote) {
@@ -192,6 +200,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     return merged;
   }
 
+  // constrói o estado de erro
   Widget _errorState() => Center(
     child: Padding(
       padding: const EdgeInsets.symmetric(horizontal: 30),
@@ -223,6 +232,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     ),
   );
 
+  // constrói uma notificação
   Widget _notificationTile(AppNotification notification) => Container(
     margin: const EdgeInsets.only(bottom: 14),
     padding: const EdgeInsets.all(16),

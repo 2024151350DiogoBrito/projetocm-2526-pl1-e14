@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+// modelo de dados de uma notificação
 class AppNotification {
   final String id;
   final String title;
@@ -8,6 +9,7 @@ class AppNotification {
   final bool read;
   final DateTime createdAt;
 
+  // cria uma notificação
   AppNotification({
     required this.id,
     required this.title,
@@ -17,6 +19,7 @@ class AppNotification {
     required this.createdAt,
   });
 
+  // cria uma notificação a partir do firestore
   factory AppNotification.fromDoc(
     QueryDocumentSnapshot<Map<String, dynamic>> doc,
   ) {

@@ -24,7 +24,7 @@ class TmdbService {
       ? Future.value([])
       : _fetchMovies('search/multi', {'query': query});
 
-  // vai buscar os filmes mais populares de um género específico sem conteúdo +18
+  // vai buscar os filmes mais populares de um género específico
   Future<List<Movie>> getMoviesByGenre(int genreId) async {
     final movies = await _fetchMovies('discover/movie', {
       'with_genres': genreId.toString(),
@@ -72,6 +72,7 @@ class TmdbService {
     throw Exception('Erro ao carregar detalhes: ${response.statusCode}');
   }
 
+  // vai buscar o elenco e equipa técnica
   Future<MovieCredits> getMovieCredits(
     int movieId, {
     String mediaType = 'movie',
@@ -81,6 +82,7 @@ class TmdbService {
     return MovieCredits.fromJson(data);
   }
 
+  // vai buscar onde ver o filme ou série
   Future<List<WatchProvider>> getWatchProviders(
     int movieId, {
     String mediaType = 'movie',
@@ -97,6 +99,7 @@ class TmdbService {
         .toList();
   }
 
+  // vai buscar imagens do filme ou série
   Future<List<String>> getMovieImages(
     int movieId, {
     String mediaType = 'movie',
@@ -115,6 +118,7 @@ class TmdbService {
         .toList();
   }
 
+  // vai buscar a chave do trailer no youtube
   Future<String?> getMovieTrailerKey(
     int movieId, {
     String mediaType = 'movie',
@@ -132,11 +136,13 @@ class TmdbService {
     return null;
   }
 
+  // vai buscar os detalhes de uma pessoa
   Future<PersonDetail> getPersonDetails(int personId) async {
     final data = await _getJson('person/$personId');
     return PersonDetail.fromJson(data);
   }
 
+  // vai buscar os filmes e séries de uma pessoa
   Future<List<Movie>> getPersonMovieCredits(int personId) async {
     final data = await _getJson('person/$personId/combined_credits');
     final cast = data['cast'] as List? ?? [];
@@ -147,8 +153,7 @@ class TmdbService {
               movie['poster_path'] != null &&
               movie['backdrop_path'] != null &&
               movie['adult'] != true &&
-              (movie['media_type'] == 'movie' || movie['media_type'] == 'tv') &&
-              _looksSafeTitle(movie['title'] ?? movie['name'] ?? ''),
+              (movie['media_type'] == 'movie' || movie['media_type'] == 'tv'),
         )
         .map((movie) => Movie.fromJson(movie))
         .toList();
@@ -163,6 +168,7 @@ class TmdbService {
     return _fetchMovies('$endpoint/$movieId/similar');
   }
 
+  // vai buscar recomendações mais adequadas
   Future<List<Movie>> getSmartRecommendations(Movie source) async {
     final endpoint = source.mediaType == 'tv' ? 'tv' : 'movie';
     final detail = await _getJson('$endpoint/${source.id}');
@@ -216,6 +222,7 @@ class TmdbService {
     ).take(18).toList();
   }
 
+  // vai buscar json da api
   Future<Map<String, dynamic>> _getJson(
     String endpoint, [
     Map<String, String>? params,
@@ -232,6 +239,7 @@ class TmdbService {
     throw Exception('Erro na API: ${response.statusCode}');
   }
 
+  // vai buscar filmes da mesma coleção
   Future<List<Movie>> _fetchCollectionMovies(
     int collectionId,
     String sourceLanguage,
@@ -245,13 +253,13 @@ class TmdbService {
               movie['poster_path'] != null &&
               movie['backdrop_path'] != null &&
               movie['adult'] != true &&
-              (sourceLanguage != 'en' || movie['original_language'] == 'en') &&
-              _looksSafeTitle(movie['title'] ?? ''),
+              (sourceLanguage != 'en' || movie['original_language'] == 'en'),
         )
         .map((movie) => Movie.fromJson({...movie, 'media_type': 'movie'}))
         .toList();
   }
 
+  // vai buscar palavras chave do filme ou série
   Future<List<String>> _getKeywords(int id, String mediaType) async {
     final endpoint = mediaType == 'tv' ? 'tv' : 'movie';
     final data = await _getJson('$endpoint/$id/keywords');
@@ -293,14 +301,13 @@ class TmdbService {
     if (response.statusCode == 200) {
       final List results = json.decode(response.body)['results'];
 
-      // filtra filmes sem imagem, conteúdo adulto e títulos claramente +18
+      // filtra filmes sem imagem e conteúdo adulto
       return results
           .where(
             (m) =>
                 m['poster_path'] != null &&
                 m['backdrop_path'] != null &&
-                m['adult'] != true &&
-                _looksSafeTitle(m['title'] ?? m['name'] ?? ''),
+                m['adult'] != true,
           )
           .map((m) => Movie.fromJson(m))
           .toList();
@@ -310,21 +317,7 @@ class TmdbService {
     throw Exception('Erro na API: ${response.statusCode}');
   }
 
-  bool _looksSafeTitle(String title) {
-    final text = title.toLowerCase();
-    const blockedWords = [
-      'porn',
-      'pornhub',
-      'sex',
-      'erotic',
-      'nude',
-      'naked',
-      'xxx',
-    ];
-
-    return !blockedWords.any(text.contains);
-  }
-
+  // ordena recomendações por relevância
   List<Movie> _rankRecommendations(
     List<Movie> items,
     Movie source,
@@ -354,6 +347,7 @@ class TmdbService {
     return filtered;
   }
 
+  // calcula a pontuação de uma recomendação
   double _recommendationScore(Movie item, Movie source) {
     final sharedGenres = item.genreIds
         .where((genreId) => source.genreIds.contains(genreId))
@@ -375,6 +369,7 @@ class TmdbService {
     return score;
   }
 
+  // ordena filmes por popularidade
   List<Movie> _sortByPopularity(List<Movie> items) {
     final sorted = [...items];
     sorted.sort((a, b) => b.popularity.compareTo(a.popularity));
@@ -388,6 +383,7 @@ class MovieCredits {
 
   MovieCredits({required this.cast, required this.crew});
 
+  // cria os créditos a partir do json
   factory MovieCredits.fromJson(Map<String, dynamic> json) => MovieCredits(
     cast: (json['cast'] as List? ?? [])
         .map((member) => CastMember.fromJson(member))
@@ -398,6 +394,7 @@ class MovieCredits {
         .toList(),
   );
 
+  // devolve o realizador principal
   CrewMember? get director {
     for (final member in crew) {
       if (member.job.toLowerCase() == 'director') return member;
@@ -419,6 +416,7 @@ class CastMember {
     this.profileUrl,
   });
 
+  // cria um ator a partir do json
   factory CastMember.fromJson(Map<String, dynamic> json) => CastMember(
     id: json['id'] ?? 0,
     name: json['name'] ?? '',
@@ -436,6 +434,7 @@ class CrewMember {
 
   CrewMember({required this.name, required this.job, this.profileUrl});
 
+  // cria um membro da equipa a partir do json
   factory CrewMember.fromJson(Map<String, dynamic> json) => CrewMember(
     name: json['name'] ?? '',
     job: json['job'] ?? '',
@@ -451,6 +450,7 @@ class WatchProvider {
 
   WatchProvider({required this.name, required this.logoUrl});
 
+  // cria uma plataforma a partir do json
   factory WatchProvider.fromJson(Map<String, dynamic> json) => WatchProvider(
     name: json['provider_name'] ?? '',
     logoUrl: 'https://image.tmdb.org/t/p/w185${json['logo_path']}',
@@ -474,6 +474,7 @@ class PersonDetail {
     required this.placeOfBirth,
   });
 
+  // cria os detalhes da pessoa a partir do json
   factory PersonDetail.fromJson(Map<String, dynamic> json) => PersonDetail(
     name: json['name'] ?? '',
     biography: json['biography'] ?? '',

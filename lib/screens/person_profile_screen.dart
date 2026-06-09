@@ -4,6 +4,7 @@ import '../services/tmdb_service.dart';
 import '../theme/app_theme.dart';
 import 'movie_detail_screen.dart';
 
+// ecrã de perfil de uma pessoa
 class PersonProfileScreen extends StatefulWidget {
   final int personId;
   final String fallbackName;
@@ -27,6 +28,7 @@ class _PersonProfileScreenState extends State<PersonProfileScreen> {
   late Future<PersonDetail> _personFuture;
   late Future<List<Movie>> _creditsFuture;
 
+  // carrega os dados da pessoa
   @override
   void initState() {
     super.initState();
@@ -34,6 +36,7 @@ class _PersonProfileScreenState extends State<PersonProfileScreen> {
     _creditsFuture = _service.getPersonMovieCredits(widget.personId);
   }
 
+  // constrói a página da pessoa
   @override
   Widget build(BuildContext context) => Scaffold(
     backgroundColor: AppTheme.deepBlack,
@@ -47,6 +50,7 @@ class _PersonProfileScreenState extends State<PersonProfileScreen> {
     ),
   );
 
+  // mostra uma imagem da internet
   Widget _networkImage(
     String url, {
     double? width,
@@ -71,6 +75,7 @@ class _PersonProfileScreenState extends State<PersonProfileScreen> {
     ),
   );
 
+  // constrói o cabeçalho da pessoa
   Widget _buildHeader() => FutureBuilder<PersonDetail>(
     future: _personFuture,
     builder: (context, snapshot) {
@@ -164,6 +169,7 @@ class _PersonProfileScreenState extends State<PersonProfileScreen> {
     },
   );
 
+  // constrói os filmes conhecidos da pessoa
   Widget _buildCredits() => FutureBuilder<List<Movie>>(
     future: _creditsFuture,
     builder: (context, snapshot) {
@@ -238,6 +244,7 @@ class _PersonProfileScreenState extends State<PersonProfileScreen> {
     },
   );
 
+  // constrói um título de secção
   Widget _sectionHeader(IconData icon, String label) => Row(
     children: [
       Icon(icon, color: AppTheme.primaryRed, size: 20),

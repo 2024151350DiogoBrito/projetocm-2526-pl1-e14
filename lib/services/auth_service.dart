@@ -3,11 +3,13 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+// erro personalizado da autenticação
 class AuthServiceException implements Exception {
   final String message;
 
   AuthServiceException(this.message);
 
+  // devolve a mensagem do erro
   @override
   String toString() => message;
 }
@@ -16,8 +18,10 @@ class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
+  // utilizador autenticado atualmente
   User? get currentUser => _auth.currentUser;
 
+  // inicia sessão com email e palavra-passe
   Future<void> login(String email, String password) async {
     try {
       await _auth.signInWithEmailAndPassword(email: email, password: password);
@@ -26,6 +30,7 @@ class AuthService {
     }
   }
 
+  // cria uma nova conta
   Future<void> register(String name, String email, String password) async {
     try {
       final credential = await _auth.createUserWithEmailAndPassword(
@@ -47,6 +52,7 @@ class AuthService {
     }
   }
 
+  // atualiza o nome e foto do perfil
   Future<void> updateProfile({
     required String name,
     String? photoBase64,
@@ -81,6 +87,7 @@ class AuthService {
     }
   }
 
+  // altera a palavra-passe do utilizador
   Future<void> changePassword({
     required String currentPassword,
     required String newPassword,
@@ -110,10 +117,12 @@ class AuthService {
     }
   }
 
+  // termina a sessão atual
   Future<void> logout() async {
     await _auth.signOut();
   }
 
+  // transforma erros do firebase em mensagens amigáveis
   String _messageForAuthError(FirebaseAuthException e) {
     switch (e.code) {
       case 'invalid-email':

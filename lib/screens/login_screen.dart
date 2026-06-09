@@ -281,6 +281,7 @@ class _LoginScreenState extends State<LoginScreen> {
     ),
   );
 
+  // valida os dados introduzidos
   void _validateFields(String name, String email, String password) {
     if (!isSignIn && name.length < 2) {
       throw AuthServiceException(
@@ -303,6 +304,7 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  // liberta os controladores dos campos
   @override
   void dispose() {
     _nameController.dispose();

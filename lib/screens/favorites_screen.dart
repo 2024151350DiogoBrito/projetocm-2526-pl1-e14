@@ -3,6 +3,7 @@ import '../models/movie.dart';
 import '../theme/app_theme.dart';
 import 'movie_detail_screen.dart';
 
+// ecrã dos favoritos
 class FavoritesScreen extends StatefulWidget {
   final List<Movie> favoriteMovies;
   final Future<void> Function(Movie) onAddFavorite;
@@ -22,6 +23,7 @@ class FavoritesScreen extends StatefulWidget {
 class _FavoritesScreenState extends State<FavoritesScreen> {
   bool _recentFirst = true;
 
+  // constrói a página de favoritos
   @override
   Widget build(BuildContext context) => Scaffold(
     backgroundColor: AppTheme.deepBlack,
@@ -39,6 +41,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     ),
   );
 
+  // constrói o cabeçalho
   Widget _buildHeader() => Row(
     mainAxisAlignment: MainAxisAlignment.spaceBetween,
     children: [
@@ -81,6 +84,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     ],
   );
 
+  // constrói o botão de ordenação
   Widget _buildFilterBtn() => GestureDetector(
     onTap: () {
       setState(() {
@@ -110,6 +114,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     ),
   );
 
+  // constrói a grelha de favoritos
   Widget _buildGrid() {
     if (widget.favoriteMovies.isEmpty) {
       return const Expanded(
@@ -161,6 +166,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
   }
 }
 
+// cartão de um favorito
 class _MovieGridItem extends StatelessWidget {
   final Movie movie;
   final VoidCallback onTap;
@@ -172,6 +178,7 @@ class _MovieGridItem extends StatelessWidget {
     required this.onRemove,
   });
 
+  // constrói o cartão do filme
   @override
   Widget build(BuildContext context) => GestureDetector(
     onTap: onTap,
@@ -230,6 +237,7 @@ class _MovieGridItem extends StatelessWidget {
     ),
   );
 
+  // constrói o poster
   Widget _buildPoster() => Container(
     decoration: BoxDecoration(
       borderRadius: BorderRadius.circular(15),
@@ -240,6 +248,7 @@ class _MovieGridItem extends StatelessWidget {
     ),
   );
 
+  // constrói a etiqueta da avaliação
   Widget _buildRatingBadge() => Positioned(
     bottom: 8,
     left: 8,

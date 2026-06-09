@@ -14,6 +14,7 @@ class Movie {
   final double popularity;
   final String originalLanguage;
 
+  // cria um filme ou série
   Movie({
     required this.id,
     required this.title,
@@ -28,6 +29,7 @@ class Movie {
     this.originalLanguage = '',
   });
 
+  // cria um filme a partir do json
   factory Movie.fromJson(Map<String, dynamic> json) {
     final type =
         json['media_type'] ??
@@ -50,6 +52,7 @@ class Movie {
     );
   }
 
+  // cria um filme a partir do firestore
   factory Movie.fromMap(Map<String, dynamic> map) => Movie(
     id: map['id'],
     title: map['title'] ?? 'Sem Titulo',
@@ -64,6 +67,7 @@ class Movie {
     originalLanguage: map['originalLanguage'] ?? '',
   );
 
+  // converte o filme para firestore
   Map<String, dynamic> toMap() => {
     'id': id,
     'title': title,
@@ -78,14 +82,18 @@ class Movie {
     'originalLanguage': originalLanguage,
   };
 
+  // chave única para os favoritos
   String get favoriteKey => '${mediaType}_$id';
 
+  // compara dois filmes ou séries
   bool sameAs(Movie other) => id == other.id && mediaType == other.mediaType;
 
+  // devolve o poster completo
   String get fullPosterPath => posterPath != null
       ? '$_imageBaseUrl/w500$posterPath'
       : 'https://via.placeholder.com/500x750?text=sem+poster';
 
+  // devolve o backdrop completo
   String get fullBackdropPath => backdropPath != null
       ? '$_imageBaseUrl/w780$backdropPath'
       : 'https://via.placeholder.com/1280x720?text=sem+backdrop';

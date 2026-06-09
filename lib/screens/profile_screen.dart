@@ -22,6 +22,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _notificationsEnabled = true;
   Uint8List? _profilePhotoBytes;
 
+  // mostra a janela para editar o perfil
   Future<void> _showEditProfileDialog() async {
     final user = FirebaseAuth.instance.currentUser;
     bool isLoading = false;
@@ -134,6 +135,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  // mostra a janela para mudar a password
   Future<void> _showChangePasswordDialog() async {
     bool isLoading = false;
 
@@ -233,6 +235,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  // constrói um campo do popup
   Widget _dialogField({
     required TextEditingController controller,
     required String label,
@@ -264,6 +267,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     ),
   );
 
+  // constrói o botão para escolher foto
   Widget _photoPickerButton({
     required ImageProvider? preview,
     required String label,
@@ -318,6 +322,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     ),
   );
 
+  // escolhe e reduz a foto de perfil
   Future<Uint8List?> _pickProfilePhoto() async {
     final pickedPhoto = await ImagePicker().pickImage(
       source: ImageSource.gallery,
@@ -342,6 +347,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Uint8List.fromList(img.encodeJpg(resizedImage, quality: 65));
   }
 
+  // mostra uma mensagem rápida
   void _showMessage(String message) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
@@ -604,6 +610,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  // mostra a imagem do avatar
   Widget _avatarImage(Uint8List? bytes) {
     if (bytes == null) {
       return const Center(

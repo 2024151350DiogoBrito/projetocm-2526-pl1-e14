@@ -11,6 +11,7 @@ class NotificationService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final TmdbService _tmdb = TmdbService();
 
+  // vai buscar o id do utilizador atual
   String get _currentUid {
     final uid = _auth.currentUser?.uid;
     if (uid == null) {
@@ -19,12 +20,15 @@ class NotificationService {
     return uid;
   }
 
+  // referência das notificações do utilizador
   CollectionReference<Map<String, dynamic>> _notificationsRef(String uid) =>
       _firestore.collection('users').doc(uid).collection('notifications');
 
+  // referência dos favoritos do utilizador
   CollectionReference<Map<String, dynamic>> _favoritesRef(String uid) =>
       _firestore.collection('users').doc(uid).collection('favorites');
 
+  // vai buscar as notificações guardadas
   Future<List<AppNotification>> getNotifications() async {
     final snapshot = await _notificationsRef(
       _currentUid,
@@ -33,6 +37,7 @@ class NotificationService {
     return snapshot.docs.map(AppNotification.fromDoc).toList();
   }
 
+  // conta notificações por ler
   Future<int> getUnreadCount() async {
     final snapshot = await _notificationsRef(
       _currentUid,
@@ -40,6 +45,7 @@ class NotificationService {
     return snapshot.docs.length;
   }
 
+  // marca todas as notificações como lidas
   Future<void> markAllAsRead() async {
     final snapshot = await _notificationsRef(
       _currentUid,
@@ -53,6 +59,7 @@ class NotificationService {
     await batch.commit();
   }
 
+  // cria uma notificação de demonstração
   AppNotification createDemoNotification() {
     final uid = _currentUid;
     final timestamp = DateTime.now().millisecondsSinceEpoch;
@@ -83,6 +90,7 @@ class NotificationService {
     return notification;
   }
 
+  // limpa todas as notificações
   Future<void> clearNotifications() async {
     final snapshot = await _notificationsRef(_currentUid).get();
     final batch = _firestore.batch();
@@ -94,6 +102,7 @@ class NotificationService {
     await batch.commit();
   }
 
+  // prepara um favorito para receber avisos
   Future<void> prepareFavorite(Movie movie) async {
     final today = DateTime.now();
     final releaseDate = _parseDate(movie.releaseDate);
@@ -115,6 +124,7 @@ class NotificationService {
     ).doc(movie.favoriteKey).set(data, SetOptions(merge: true));
   }
 
+  // verifica novidades nos favoritos guardados
   Future<void> checkSavedItems() async {
     final uid = _currentUid;
     final favorites = await _favoritesRef(uid).get();
@@ -131,6 +141,7 @@ class NotificationService {
     }
   }
 
+  // verifica se um filme guardado já estreou
   Future<void> _checkMovieRelease(
     String uid,
     DocumentReference<Map<String, dynamic>> favoriteRef,
@@ -152,6 +163,7 @@ class NotificationService {
     await favoriteRef.set({'releaseNotified': true}, SetOptions(merge: true));
   }
 
+  // verifica se uma série ganhou nova temporada
   Future<void> _checkSeriesSeason(
     String uid,
     DocumentReference<Map<String, dynamic>> favoriteRef,
@@ -186,6 +198,7 @@ class NotificationService {
     }, SetOptions(merge: true));
   }
 
+  // guarda uma notificação no firestore
   Future<void> _createNotification({
     required String uid,
     required String key,
@@ -202,6 +215,7 @@ class NotificationService {
     }, SetOptions(merge: true));
   }
 
+  // converte texto em data
   DateTime? _parseDate(String value) {
     if (value.isEmpty) return null;
     return DateTime.tryParse(value);

@@ -10,6 +10,7 @@ import 'favorites_screen.dart';
 import 'notifications_screen.dart';
 import 'profile_screen.dart';
 
+// navegação principal da app
 class MainNavigation extends StatefulWidget {
   const MainNavigation({super.key});
 
@@ -27,12 +28,14 @@ class _MainNavigationState extends State<MainNavigation> {
   bool _isLoadingFavorites = true;
   int _unreadNotifications = 0;
 
+  // carrega os dados iniciais
   @override
   void initState() {
     super.initState();
     _loadFavorites();
   }
 
+  // carrega os favoritos guardados
   Future<void> _loadFavorites() async {
     try {
       final favorites = await _favoriteService.getFavorites();
@@ -52,6 +55,7 @@ class _MainNavigationState extends State<MainNavigation> {
     }
   }
 
+  // adiciona um favorito
   Future<void> _addFavorite(Movie movie) async {
     if (_favoriteMovies.any((m) => m.sameAs(movie))) {
       return;
@@ -73,6 +77,7 @@ class _MainNavigationState extends State<MainNavigation> {
     }
   }
 
+  // remove um favorito
   Future<void> _removeFavorite(Movie movie) async {
     final removedIndex = _favoriteMovies.indexWhere((m) => m.sameAs(movie));
     if (removedIndex == -1) {
@@ -95,6 +100,7 @@ class _MainNavigationState extends State<MainNavigation> {
     }
   }
 
+  // adiciona uma pesquisa recente
   void _addRecentSearch(String text) {
     setState(() {
       final query = text.trim();
@@ -112,12 +118,14 @@ class _MainNavigationState extends State<MainNavigation> {
     });
   }
 
+  // limpa as pesquisas recentes
   void _clearRecentSearches() {
     setState(() {
       _recentSearches.clear();
     });
   }
 
+  // atualiza o contador de notificações
   Future<void> _refreshNotifications() async {
     try {
       await _notificationService.checkSavedItems();
@@ -125,10 +133,11 @@ class _MainNavigationState extends State<MainNavigation> {
       if (!mounted) return;
       setState(() => _unreadNotifications = unread);
     } catch (_) {
-      // Notifications are secondary; the app should keep working if they fail.
+    
     }
   }
 
+  // abre o ecrã de notificações
   Future<void> _openNotifications() async {
     await Navigator.push(
       context,
@@ -137,6 +146,7 @@ class _MainNavigationState extends State<MainNavigation> {
     await _refreshNotifications();
   }
 
+  // constrói a navegação principal
   @override
   Widget build(BuildContext context) {
     final List<Widget> screens = [
@@ -174,6 +184,7 @@ class _MainNavigationState extends State<MainNavigation> {
     );
   }
 
+  // constrói a barra inferior flutuante
   Widget _buildFloatingBar() => Container(
     height: 90,
     margin: const EdgeInsets.fromLTRB(24, 0, 24, 30),
@@ -209,6 +220,7 @@ class _MainNavigationState extends State<MainNavigation> {
     ),
   );
 
+  // constrói um item da barra inferior
   BottomNavigationBarItem _navItem(IconData icon, String label, int index) =>
       BottomNavigationBarItem(
         label: label,

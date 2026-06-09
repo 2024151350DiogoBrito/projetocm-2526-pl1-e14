@@ -5,6 +5,7 @@ import '../models/movie.dart';
 import '../widgets/movie_card.dart';
 import 'movie_detail_screen.dart';
 
+// ecrã inicial da app
 class HomeScreen extends StatefulWidget {
   final List<Movie> favoriteMovies;
   final Future<void> Function(Movie) onAddFavorite;
@@ -45,6 +46,7 @@ class _HomeScreenState extends State<HomeScreen> {
   late Future<List<Movie>> _upcoming;
   late Future<List<Movie>> _genreMovies;
 
+  // carrega os filmes iniciais
   @override
   void initState() {
     super.initState();
@@ -54,9 +56,11 @@ class _HomeScreenState extends State<HomeScreen> {
     _genreMovies = Future.value([]);
   }
 
+  // escolhe os filmes do destaque
   Future<List<Movie>> get _heroMovies =>
       _selectedCategory == "ALL" ? _trending : _genreMovies;
 
+  // seleciona uma categoria
   void _selectCategory(_HomeCategory category) {
     setState(() {
       _selectedCategory = category.name;
@@ -66,10 +70,12 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
+  // verifica se está nos favoritos
   bool _isFavorite(Movie movie) {
     return widget.favoriteMovies.any((m) => m.sameAs(movie));
   }
 
+  // adiciona ou remove dos favoritos
   Future<void> _toggleFavorite(Movie movie) async {
     if (_isFavorite(movie)) {
       await widget.onRemoveFavorite(movie);
@@ -82,6 +88,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  // constrói a página inicial
   @override
   Widget build(BuildContext context) => Scaffold(
     backgroundColor: AppTheme.deepBlack,
@@ -96,6 +103,7 @@ class _HomeScreenState extends State<HomeScreen> {
     ),
   );
 
+  // constrói a barra superior
   Widget _buildAppBar() => SliverAppBar(
     backgroundColor: AppTheme.deepBlack.withValues(alpha: 0.9),
     floating: true,
@@ -126,6 +134,7 @@ class _HomeScreenState extends State<HomeScreen> {
     actions: [_notificationButton(), const SizedBox(width: 10)],
   );
 
+  // constrói o botão de notificações
   Widget _notificationButton() => Stack(
     clipBehavior: Clip.none,
     children: [
@@ -158,6 +167,7 @@ class _HomeScreenState extends State<HomeScreen> {
     ],
   );
 
+  // constrói o destaque principal
   Widget _buildHero() => FutureBuilder<List<Movie>>(
     future: _heroMovies,
     builder: (context, snapshot) {
@@ -192,6 +202,7 @@ class _HomeScreenState extends State<HomeScreen> {
     },
   );
 
+  // constrói o gradiente do destaque
   Widget _buildHeroGradient() => Positioned.fill(
     child: Container(
       decoration: BoxDecoration(
@@ -209,6 +220,7 @@ class _HomeScreenState extends State<HomeScreen> {
     ),
   );
 
+  // constrói o conteúdo do destaque
   Widget _buildHeroContent(Movie hero) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
@@ -257,6 +269,7 @@ class _HomeScreenState extends State<HomeScreen> {
     ],
   );
 
+  // constrói os botões de categorias
   Widget _buildCategories() => SingleChildScrollView(
     scrollDirection: Axis.horizontal,
     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
@@ -303,6 +316,7 @@ class _HomeScreenState extends State<HomeScreen> {
     ),
   );
 
+  // constrói as secções de filmes
   Widget _buildMovieSections() {
     if (_selectedCategory != "ALL") {
       return Column(
@@ -329,10 +343,12 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  // devolve o emoji da categoria selecionada
   String _selectedCategoryEmoji() => _categories
       .firstWhere((category) => category.name == _selectedCategory)
       .emoji;
 
+  // constrói o título de uma secção
   Widget _sectionTitle(String title) => Padding(
     padding: const EdgeInsets.fromLTRB(20, 10, 20, 15),
     child: Row(
@@ -352,6 +368,7 @@ class _HomeScreenState extends State<HomeScreen> {
     ),
   );
 
+  // constrói uma lista de filmes
   Widget _movieList(Future<List<Movie>> future, String layout) => SizedBox(
     height: layout == 'backdrop' ? 160 : 220,
     child: FutureBuilder<List<Movie>>(
@@ -387,6 +404,7 @@ class _HomeScreenState extends State<HomeScreen> {
     ),
   );
 
+  // abre os detalhes do filme
   void _openDetail(BuildContext ctx, Movie movie) => Navigator.push(
     ctx,
     MaterialPageRoute(
@@ -399,6 +417,7 @@ class _HomeScreenState extends State<HomeScreen> {
     ),
   );
 
+  // constrói um item com imagem larga
   Widget _backdropItem(Movie movie) => GestureDetector(
     onTap: () => _openDetail(context, movie),
     child: Container(
@@ -436,6 +455,7 @@ class _HomeScreenState extends State<HomeScreen> {
     ),
   );
 
+  // constrói uma etiqueta pequena
   Widget _badge(String txt) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
     decoration: BoxDecoration(
@@ -452,6 +472,7 @@ class _HomeScreenState extends State<HomeScreen> {
     ),
   );
 
+  // constrói o botão de ação
   Widget _actionBtn(String txt, {VoidCallback? onTap}) => SizedBox(
     height: 56,
     child: ElevatedButton.icon(
@@ -467,6 +488,7 @@ class _HomeScreenState extends State<HomeScreen> {
     ),
   );
 
+  // constrói o botão de favorito
   Widget _favBtn(Movie movie) => GestureDetector(
     onTap: () => _toggleFavorite(movie),
     child: Container(
@@ -487,6 +509,7 @@ class _HomeScreenState extends State<HomeScreen> {
   );
 }
 
+// dados de uma categoria da home
 class _HomeCategory {
   final String name;
   final int? id;

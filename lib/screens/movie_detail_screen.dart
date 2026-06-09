@@ -5,6 +5,7 @@ import '../services/tmdb_service.dart';
 import '../theme/app_theme.dart';
 import 'person_profile_screen.dart';
 
+// ecrã de detalhes do filme ou série
 class MovieDetailScreen extends StatefulWidget {
   final Movie movie;
   final bool isFavorite;
@@ -33,6 +34,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
   late Future<String?> _trailerFuture;
   bool _isFavorite = false;
 
+  // carrega os dados do filme ou série
   @override
   void initState() {
     super.initState();
@@ -60,6 +62,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
     _isFavorite = widget.isFavorite;
   }
 
+  // adiciona ou remove dos favoritos
   Future<void> _toggleFavorite() async {
     final nextValue = !_isFavorite;
     setState(() => _isFavorite = nextValue);
@@ -82,6 +85,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
     }
   }
 
+  // constrói a página de detalhes
   @override
   Widget build(BuildContext context) => Scaffold(
     backgroundColor: AppTheme.deepBlack,
@@ -108,6 +112,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
     ),
   );
 
+  // mostra uma imagem da internet
   Widget _networkImage(
     String url, {
     double? width,
@@ -132,6 +137,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
     ),
   );
 
+  // constrói o topo com imagem e dados principais
   Widget _buildHero(MovieDetail? detail) => SizedBox(
     height: 410,
     child: Stack(
@@ -215,6 +221,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
     ),
   );
 
+  // constrói os botões de trailer e guardar
   Widget _buildActions() => Padding(
     padding: const EdgeInsets.fromLTRB(18, 8, 18, 0),
     child: Row(
@@ -242,6 +249,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
     ),
   );
 
+  // constrói as plataformas onde ver
   Widget _buildProviders() => FutureBuilder<List<WatchProvider>>(
     future: _providersFuture,
     builder: (context, snapshot) {
@@ -291,6 +299,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
     },
   );
 
+  // constrói o elenco principal
   Widget _buildCast() => FutureBuilder<MovieCredits>(
     future: _creditsFuture,
     builder: (context, snapshot) {
@@ -367,6 +376,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
     },
   );
 
+  // constrói a sinopse
   Widget _buildSynopsis() => Padding(
     padding: const EdgeInsets.fromLTRB(20, 26, 20, 0),
     child: Column(
@@ -388,6 +398,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
     ),
   );
 
+  // constrói a informação técnica
   Widget _buildTechnicalInfo(MovieDetail detail) => Padding(
     padding: const EdgeInsets.fromLTRB(20, 34, 20, 0),
     child: Column(
@@ -409,6 +420,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
     ),
   );
 
+  // constrói a galeria de imagens
   Widget _buildGallery() => FutureBuilder<List<String>>(
     future: _imagesFuture,
     builder: (context, snapshot) {
@@ -439,6 +451,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
     },
   );
 
+  // constrói as recomendações
   Widget _buildRecommendations() => FutureBuilder<List<Movie>>(
     future: _similarFuture,
     builder: (context, snapshot) {
@@ -484,6 +497,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
     },
   );
 
+  // constrói um cartão de secção
   Widget _sectionCard({
     required IconData icon,
     required String title,
@@ -505,6 +519,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
     ),
   );
 
+  // constrói uma secção horizontal
   Widget _sectionBlock({
     required IconData icon,
     required String title,
@@ -525,6 +540,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
     ),
   );
 
+  // constrói o cabeçalho de uma secção
   Widget _sectionHeader(IconData icon, String title) => Row(
     children: [
       Icon(icon, color: AppTheme.primaryRed, size: 21),
@@ -540,6 +556,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
     ],
   );
 
+  // constrói um título com linha vermelha
   Widget _redLineTitle(String title) => Row(
     children: [
       Container(
@@ -561,6 +578,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
     ],
   );
 
+  // constrói uma caixa de informação
   Widget _infoPill(String label, String value) => Container(
     width: double.infinity,
     padding: const EdgeInsets.all(14),
@@ -592,6 +610,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
     ),
   );
 
+  // constrói a caixa da equipa principal
   Widget _crewPill(CrewMember crew) => Container(
     width: double.infinity,
     padding: const EdgeInsets.all(14),
@@ -637,6 +656,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
     ),
   );
 
+  // constrói um botão grande
   Widget _largeButton({
     required IconData icon,
     required String label,
@@ -669,6 +689,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
     ),
   );
 
+  // constrói a etiqueta da avaliação
   Widget _ratingBadge() => Container(
     padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
     decoration: BoxDecoration(
@@ -692,6 +713,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
     ),
   );
 
+  // constrói um dado pequeno
   Widget _miniMeta(IconData icon, String label) => Row(
     mainAxisSize: MainAxisSize.min,
     children: [
@@ -701,6 +723,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
     ],
   );
 
+  // constrói um botão com ícone
   Widget _iconButton(IconData icon, VoidCallback onTap) => GestureDetector(
     onTap: onTap,
     child: Container(
@@ -714,6 +737,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
     ),
   );
 
+  // abre o trailer no youtube
   Future<void> _showTrailer() async {
     final key = await _trailerFuture;
     if (!mounted) return;
@@ -740,6 +764,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
     );
   }
 
+  // tenta abrir o link do trailer
   Future<bool> _openTrailerUrl(Uri url) async {
     try {
       if (await launchUrl(url, mode: LaunchMode.platformDefault)) {
@@ -754,9 +779,11 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
     }
   }
 
+  // devolve o ano de uma data
   String _year(String date) => date.length >= 4 ? date.substring(0, 4) : 'N/A';
 }
 
+// detalhes completos de um filme ou série
 class MovieDetail {
   final int runtime;
   final String status;
@@ -784,6 +811,7 @@ class MovieDetail {
     this.numberOfSeasons = 0,
   });
 
+  // cria os detalhes a partir do json
   factory MovieDetail.fromJson(Map<String, dynamic> json) => MovieDetail(
     runtime:
         json['runtime'] ??
@@ -806,6 +834,7 @@ class MovieDetail {
   String? get fullPosterPath =>
       posterPath != null ? '$_imageBaseUrl/w500$posterPath' : null;
 
+  // formata a duração
   String get runtimeFormatted {
     if (runtime <= 0) return 'N/A';
     final h = runtime ~/ 60;
@@ -813,6 +842,7 @@ class MovieDetail {
     return h > 0 ? '${h}h ${m}m' : '${m}m';
   }
 
+  // formata valores monetários
   String _formatMoney(int value) {
     if (value <= 0) return 'N/A';
     if (value >= 1000000000) {
@@ -822,6 +852,9 @@ class MovieDetail {
     return '\$$value';
   }
 
+  // formata o orçamento
   String get budgetFormatted => _formatMoney(budget);
+
+  // formata a receita
   String get revenueFormatted => _formatMoney(revenue);
 }

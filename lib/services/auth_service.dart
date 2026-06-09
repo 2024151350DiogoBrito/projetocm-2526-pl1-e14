@@ -41,12 +41,19 @@ class AuthService {
       final user = credential.user;
       if (user == null) return;
 
-      await user.updateDisplayName(name);
-      await _firestore.collection('users').doc(user.uid).set({
-        'name': name,
-        'email': email,
-        'createdAt': FieldValue.serverTimestamp(),
-      }, SetOptions(merge: true));
+      unawaited(user.updateDisplayName(name).catchError((Object _) {}));
+      unawaited(
+        _firestore
+            .collection('users')
+            .doc(user.uid)
+            .set({
+              'name': name,
+              'email': email,
+              'notificationsEnabled': true,
+              'createdAt': FieldValue.serverTimestamp(),
+            }, SetOptions(merge: true))
+            .catchError((Object _) {}),
+      );
     } on FirebaseAuthException catch (e) {
       throw AuthServiceException(_messageForAuthError(e));
     }

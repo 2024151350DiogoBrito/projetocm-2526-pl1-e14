@@ -1,4 +1,5 @@
 import 'dart:ui';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../models/movie.dart';
 import '../services/favorite_service.dart';
@@ -38,7 +39,9 @@ class _MainNavigationState extends State<MainNavigation> {
   // carrega os favoritos guardados
   Future<void> _loadFavorites() async {
     try {
-      final favorites = await _favoriteService.getFavorites();
+      final favorites = await _favoriteService.getFavorites().timeout(
+        const Duration(seconds: 10),
+      );
 
       if (!mounted) return;
 
@@ -48,7 +51,7 @@ class _MainNavigationState extends State<MainNavigation> {
           ..addAll(favorites);
         _isLoadingFavorites = false;
       });
-      _refreshNotifications();
+      unawaited(_refreshNotifications());
     } catch (_) {
       if (!mounted) return;
       setState(() => _isLoadingFavorites = false);
@@ -132,9 +135,7 @@ class _MainNavigationState extends State<MainNavigation> {
       final unread = await _notificationService.getUnreadCount();
       if (!mounted) return;
       setState(() => _unreadNotifications = unread);
-    } catch (_) {
-    
-    }
+    } catch (_) {}
   }
 
   // abre o ecrã de notificações

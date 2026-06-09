@@ -786,28 +786,12 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
 // detalhes completos de um filme ou série
 class MovieDetail {
   final int runtime;
-  final String status;
-  final String originalLanguage;
   final List<String> genres;
-  final int budget;
-  final int revenue;
-  final int voteCount;
-  final double popularity;
-  final String? posterPath;
   final int numberOfSeasons;
-
-  static const String _imageBaseUrl = 'https://image.tmdb.org/t/p';
 
   MovieDetail({
     required this.runtime,
-    required this.status,
-    required this.originalLanguage,
     required this.genres,
-    required this.budget,
-    required this.revenue,
-    required this.voteCount,
-    required this.popularity,
-    this.posterPath,
     this.numberOfSeasons = 0,
   });
 
@@ -818,21 +802,11 @@ class MovieDetail {
         ((json['episode_run_time'] as List?)?.isNotEmpty == true
             ? (json['episode_run_time'] as List).first
             : 0),
-    status: json['status'] ?? '',
-    originalLanguage: json['original_language'] ?? '',
     genres: (json['genres'] as List? ?? [])
         .map((g) => g['name'] as String)
         .toList(),
-    budget: json['budget'] ?? 0,
-    revenue: json['revenue'] ?? 0,
-    voteCount: json['vote_count'] ?? 0,
-    popularity: (json['popularity'] as num? ?? 0).toDouble(),
-    posterPath: json['poster_path'],
     numberOfSeasons: json['number_of_seasons'] ?? 0,
   );
-
-  String? get fullPosterPath =>
-      posterPath != null ? '$_imageBaseUrl/w500$posterPath' : null;
 
   // formata a duração
   String get runtimeFormatted {
@@ -841,20 +815,4 @@ class MovieDetail {
     final m = runtime % 60;
     return h > 0 ? '${h}h ${m}m' : '${m}m';
   }
-
-  // formata valores monetários
-  String _formatMoney(int value) {
-    if (value <= 0) return 'N/A';
-    if (value >= 1000000000) {
-      return '\$${(value / 1000000000).toStringAsFixed(1)}B';
-    }
-    if (value >= 1000000) return '\$${(value / 1000000).toStringAsFixed(0)}M';
-    return '\$$value';
-  }
-
-  // formata o orçamento
-  String get budgetFormatted => _formatMoney(budget);
-
-  // formata a receita
-  String get revenueFormatted => _formatMoney(revenue);
 }
